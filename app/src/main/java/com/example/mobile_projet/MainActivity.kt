@@ -33,6 +33,7 @@ fun MainScreen() {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
+            // 底部导航栏始终显示
             BottomNavigationBar(navController = navController)
         }
     ) { innerPadding ->

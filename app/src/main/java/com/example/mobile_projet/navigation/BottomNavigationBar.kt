@@ -50,17 +50,13 @@ fun BottomNavigationBar(navController: NavController) {
                 },
                 selected = selected,
                 onClick = {
-                    if (currentRoute != item.route) {
-                        navController.navigate(item.route) {
-                            // 避免构建大量的回退栈
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
-                            // 避免同一项目的多个副本
-                            launchSingleTop = true
-                            // 重新选择先前选择的项目时恢复状态
-                            restoreState = true
+                    navController.navigate(item.route) {
+                        // 清除所有回退栈，返回到起始目的地
+                        popUpTo(0) {
+                            inclusive = true
                         }
+                        // 避免同一项目的多个副本
+                        launchSingleTop = true
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(

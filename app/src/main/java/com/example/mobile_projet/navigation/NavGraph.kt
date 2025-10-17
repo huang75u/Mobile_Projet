@@ -21,7 +21,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             HomeScreen()
         }
         composable(route = BottomNavItem.Exercise.route) {
-            ExerciseScreen()
+            ExerciseScreen(navController = navController)
         }
         composable(route = BottomNavItem.Profile.route) {
             ProfileScreen()
