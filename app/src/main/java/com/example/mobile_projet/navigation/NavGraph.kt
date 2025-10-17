@@ -21,10 +21,10 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             HomeScreen()
         }
         composable(route = BottomNavItem.Exercise.route) {
-            ExerciseScreen()
+            ExerciseScreen(navController = navController)
         }
         composable(route = BottomNavItem.Profile.route) {
-            ProfileScreen(navController = navController)
+            ProfileScreen()
         }
         composable(route = "points_rules") {
             PointsRulesScreen(onBackClick = { navController.popBackStack() })
