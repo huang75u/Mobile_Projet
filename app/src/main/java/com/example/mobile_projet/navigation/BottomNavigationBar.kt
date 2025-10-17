@@ -1,11 +1,14 @@
 package com.example.mobile_projet.navigation
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,10 +30,16 @@ fun BottomNavigationBar(navController: NavController) {
             
             NavigationBarItem(
                 icon = {
-                    Icon(
+                    Image(
                         painter = painterResource(id = item.icon),
                         contentDescription = item.title,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(50.dp),
+                        contentScale = ContentScale.Fit,
+                        colorFilter = if (selected) {
+                            ColorFilter.tint(Color(0xFF007AFF))
+                        } else {
+                            ColorFilter.tint(Color.Gray)
+                        }
                     )
                 },
                 label = {
