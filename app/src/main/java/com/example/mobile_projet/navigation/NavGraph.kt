@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.mobile_projet.screens.ExerciseScreen
 import com.example.mobile_projet.screens.HomeScreen
+import com.example.mobile_projet.screens.PointsRulesScreen
 import com.example.mobile_projet.screens.ProfileScreen
 
 @Composable
@@ -23,7 +24,10 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             ExerciseScreen()
         }
         composable(route = BottomNavItem.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(navController = navController)
+        }
+        composable(route = "points_rules") {
+            PointsRulesScreen(onBackClick = { navController.popBackStack() })
         }
     }
 }
