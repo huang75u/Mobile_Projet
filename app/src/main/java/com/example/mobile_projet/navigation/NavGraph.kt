@@ -18,10 +18,10 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         modifier = modifier
     ) {
         composable(route = BottomNavItem.Home.route) {
-            HomeScreen(navController = navController)
+            HomeScreen()
         }
         composable(route = BottomNavItem.Exercise.route) {
-            ExerciseScreen(navController = navController)
+            ExerciseScreen()
         }
         composable(route = BottomNavItem.Profile.route) {
             ProfileScreen(navController = navController)
