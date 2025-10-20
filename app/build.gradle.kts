@@ -56,6 +56,12 @@ dependencies {
     // Coil for image loading
     implementation(libs.coil.compose)
     
+    // ViewModel Compose
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    
+    // Gson for JSON serialization
+    implementation(libs.gson)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

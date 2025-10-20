@@ -29,12 +29,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.mobile_projet.viewmodels.ExerciseViewModel
 
 @Composable
-fun ExerciseScreen(navController: NavHostController) {
+fun ExerciseScreen(
+    navController: NavHostController,
+    viewModel: ExerciseViewModel = viewModel()
+) {
     var showGoalDialog by remember { mutableStateOf(false) }
-    var sportGoals by remember { mutableStateOf(listOf<SportGoal>()) }
+    val sportGoals by viewModel.sportGoals.collectAsState()
     var editingGoal by remember { mutableStateOf<SportGoal?>(null) }
     
     Box(modifier = Modifier.fillMaxSize()) {
@@ -69,13 +74,10 @@ fun ExerciseScreen(navController: NavHostController) {
                         showGoalDialog = true
                     },
                     onDelete = {
-                        sportGoals = sportGoals.filter { it.id != goal.id }
+                        viewModel.deleteSportGoal(goal.id)
                     },
                     onToggleComplete = {
-                        sportGoals = sportGoals.map { 
-                            if (it.id == goal.id) it.copy(isCompleted = !it.isCompleted) 
-                            else it 
-                        }
+                        viewModel.toggleSportGoalCompletion(goal.id)
                     }
                 )
             }
@@ -152,13 +154,11 @@ fun ExerciseScreen(navController: NavHostController) {
                 },
                 onConfirm = { goal ->
                     if (editingGoal != null) {
-                        // 编辑模式：替换现有目标
-                        sportGoals = sportGoals.map { 
-                            if (it.id == editingGoal!!.id) goal.copy(id = editingGoal!!.id) else it 
-                        }
+                        // 编辑模式：更新现有目标
+                        viewModel.updateSportGoal(editingGoal!!.id, goal)
                     } else {
                         // 新增模式：添加新目标
-                    sportGoals = sportGoals + goal
+                        viewModel.addSportGoal(goal)
                     }
                     showGoalDialog = false
                     editingGoal = null
