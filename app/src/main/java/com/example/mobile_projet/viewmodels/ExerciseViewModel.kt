@@ -25,9 +25,13 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
     private val _sportGoals = MutableStateFlow<List<SportGoal>>(emptyList())
     val sportGoals: StateFlow<List<SportGoal>> = _sportGoals.asStateFlow()
     
+    private val _dailyCalorieGoal = MutableStateFlow(500)
+    val dailyCalorieGoal: StateFlow<Int> = _dailyCalorieGoal.asStateFlow()
+    
     init {
         // 从 SharedPreferences 加载数据
         loadSportGoals()
+        loadDailyCalorieGoal()
     }
     
     private fun loadSportGoals() {
@@ -53,9 +57,22 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
+    private fun loadDailyCalorieGoal() {
+        _dailyCalorieGoal.value = sharedPreferences.getInt("daily_calorie_goal", 500)
+    }
+    
+    fun setDailyCalorieGoal(goal: Int) {
+        _dailyCalorieGoal.value = goal
+        sharedPreferences.edit()
+            .putInt("daily_calorie_goal", goal)
+            .apply()
+        calculateAndUpdatePoints()
+    }
+    
     fun addSportGoal(goal: SportGoal) {
         _sportGoals.value = _sportGoals.value + goal
         saveSportGoals()
+        calculateAndUpdatePoints()
     }
     
     fun updateSportGoal(goalId: String, updatedGoal: SportGoal) {
@@ -63,59 +80,63 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
             if (it.id == goalId) updatedGoal.copy(id = goalId) else it
         }
         saveSportGoals()
+        calculateAndUpdatePoints()
     }
     
     fun deleteSportGoal(goalId: String) {
         _sportGoals.value = _sportGoals.value.filter { it.id != goalId }
         saveSportGoals()
-    }
-    
-    fun toggleSportGoalCompletion(goalId: String) {
-        _sportGoals.value = _sportGoals.value.map {
-            if (it.id == goalId) it.copy(isCompleted = !it.isCompleted) else it
-        }
-        saveSportGoals()
         calculateAndUpdatePoints()
     }
     
-    // 积分计算规则
+    // 新的积分计算规则
     private fun calculateAndUpdatePoints() {
-        val goals = _sportGoals.value
-        val totalCalories = goals.sumOf { it.getCalories() }
-        val completedCalories = goals.filter { it.isCompleted }.sumOf { it.getCalories() }
+        val completedExercises = _sportGoals.value
+        val dailyGoal = _dailyCalorieGoal.value
         
-        if (totalCalories == 0.0) {
+        // 计算已完成的总卡路里
+        val totalCompletedCalories = completedExercises.sumOf { it.getCalories() }
+        
+        if (dailyGoal == 0) {
             userPrefs.points = 0
             return
         }
         
-        val completionPercentage = (completedCalories / totalCalories * 100).toInt()
+        // 计算完成百分比
+        val completionPercentage = (totalCompletedCalories / dailyGoal * 100).toInt()
         var points = 0
         
-        // 规则1：完成单个运动项目奖励
+        // 规则1：基础积分 - 每完成一个运动项目
         // 根据卡路里量给积分：每10卡路里 = 1积分
-        goals.filter { it.isCompleted }.forEach { goal ->
-            val calories = goal.getCalories()
+        completedExercises.forEach { exercise ->
+            val calories = exercise.getCalories()
             points += (calories / 10).toInt()
         }
         
-        // 规则2：总体完成百分比里程碑奖励
+        // 规则2：每日目标完成度里程碑奖励
         when {
-            completionPercentage >= 100 -> points += 100  // 完成100%：额外100积分
-            completionPercentage >= 75 -> points += 50    // 完成75%：额外50积分
-            completionPercentage >= 50 -> points += 30    // 完成50%：额外30积分
-            completionPercentage >= 25 -> points += 10    // 完成25%：额外10积分
+            completionPercentage >= 100 -> {
+                points += 100  // 完成100%：100积分
+                
+                // 规则3：超额完成奖励（上限150%）
+                val excessPercentage = minOf(completionPercentage - 100, 50)
+                points += excessPercentage * 2  // 每超1%额外2积分，最多100积分
+            }
+            completionPercentage >= 80 -> points += 60   // 完成80%：60积分
+            completionPercentage >= 60 -> points += 40   // 完成60%：40积分
+            completionPercentage >= 40 -> points += 20   // 完成40%：20积分
+            completionPercentage >= 20 -> points += 10   // 完成20%：10积分
         }
         
-        // 规则3：全部完成奖励
-        val completedCount = goals.count { it.isCompleted }
-        if (completedCount == goals.size && goals.isNotEmpty()) {
-            points += 50  // 完成所有项目：额外50积分
+        // 规则4：多样性奖励 - 完成3种或以上不同运动
+        val exerciseTypeCount = completedExercises.map { it.sportType }.toSet().size
+        if (exerciseTypeCount >= 3) {
+            points += exerciseTypeCount * 8  // 每种运动类型8积分
         }
         
-        // 规则4：多项目完成组合奖励
-        if (completedCount >= 3) {
-            points += completedCount * 5  // 每完成3个或以上项目，每个额外5积分
+        // 规则5：运动量下限保护 - 至少完成20%才有积分
+        if (completionPercentage < 20) {
+            points = 0
         }
         
         // 更新积分

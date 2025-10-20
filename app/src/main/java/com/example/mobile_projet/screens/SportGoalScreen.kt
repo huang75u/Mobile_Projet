@@ -2,7 +2,10 @@ package com.example.mobile_projet.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -10,7 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,9 +59,9 @@ data class SportGoal(
     val goalLevel: String,
     val distance: String,
     val unit: String,
-    val isCompleted: Boolean = false
+    val timestamp: Long = System.currentTimeMillis()
 ) {
-    // 计算该运动目标的卡路里消耗
+    // 计算该运动的卡路里消耗
     fun getCalories(): Double {
         val amount = distance.toDoubleOrNull() ?: 0.0
         return SportType.getCaloriesForSport(sportType, amount)
@@ -68,8 +73,7 @@ data class SportGoal(
 fun SportGoalScreen(
     onDismiss: () -> Unit,
     onConfirm: (SportGoal) -> Unit,
-    initialGoal: SportGoal? = null,
-    excludedSportTypes: Set<String> = emptySet()
+    initialGoal: SportGoal? = null
 ) {
     var selectedSport by remember { mutableStateOf(initialGoal?.sportType ?: "") }
     var expandedSportMenu by remember { mutableStateOf(false) }
@@ -95,10 +99,10 @@ fun SportGoalScreen(
     // 获取当前选择运动的单位
     val currentUnit = SportType.getUnitForSport(selectedSport)
     
-    // 过滤掉已使用的运动类型
-    val sportTypes = SportType.values()
-        .map { it.displayName }
-        .filter { it !in excludedSportTypes }
+    // 所有运动类型都可选（允许重复添加）
+    val sportTypes = SportType.values().map { it.displayName }
+    
+    val keyboardController = LocalSoftwareKeyboardController.current
     
     Surface(
         modifier = Modifier
@@ -109,51 +113,17 @@ fun SportGoalScreen(
         shadowElevation = 8.dp
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxSize()
         ) {
-            // 检查是否还有可用的运动类型
-            if (sportTypes.isEmpty()) {
-                // 所有运动类型都已使用
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "🏆",
-                        fontSize = 64.sp,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                    Text(
-                        text = "Tous les sports sont déjà ajoutés !",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Vous avez ajouté tous les types de sports disponibles.",
-                        fontSize = 14.sp,
-                        color = Color.Gray,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = onDismiss,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF007AFF)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("OK", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            } else {
-                // 1. 下拉菜单选择运动类型
+            // 可滚动的内容区域
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+            // 1. 下拉菜单选择运动类型
                 ExposedDropdownMenuBox(
                     expanded = expandedSportMenu,
                     onExpandedChange = { expandedSportMenu = !expandedSportMenu }
@@ -198,7 +168,7 @@ fun SportGoalScreen(
             
             // 2. 标题文本
             Text(
-                text = "Choisissez votre objectif sportif quotidien :",
+                text = "Quel exercice avez-vous terminé aujourd'hui ?",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black,
@@ -269,67 +239,88 @@ fun SportGoalScreen(
             Spacer(modifier = Modifier.height(24.dp))
             
             // 4. 自定义运动量输入框
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "ou",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier.padding(end = 16.dp)
-                )
-                
-                OutlinedTextField(
-                    value = customDistance,
-                    onValueChange = { 
-                        customDistance = it
-                        if (it.isNotEmpty()) {
-                            selectedGoal = ""
-                        }
-                    },
-                    placeholder = { 
-                        Text(
-                            if (currentUnit.isNotEmpty()) {
-                                "Personnaliser ($currentUnit)"
-                            } else {
-                                "Personnaliser"
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ou",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
+                    
+                    OutlinedTextField(
+                        value = customDistance,
+                        onValueChange = { newValue ->
+                            // 只允许输入数字和小数点
+                            if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*$"))) {
+                                customDistance = newValue
+                                if (newValue.isNotEmpty()) {
+                                    selectedGoal = ""
+                                }
                             }
-                        ) 
-                    },
-                    suffix = {
-                        if (currentUnit.isNotEmpty() && customDistance.isNotEmpty()) {
+                        },
+                        placeholder = { 
                             Text(
-                                text = currentUnit,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black
-                            )
-                        }
-                    },
-                    enabled = selectedSport.isNotEmpty(),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFFFFB74D),
-                        unfocusedContainerColor = Color(0xFFFFB74D),
-                        disabledContainerColor = Color(0xFFE0E0E0),
-                        focusedBorderColor = Color(0xFFFF9800),
-                        unfocusedBorderColor = Color(0xFFFF9800),
-                        disabledBorderColor = Color.Gray
-                    ),
-                    singleLine = true
+                                if (currentUnit.isNotEmpty()) {
+                                    "Personnaliser ($currentUnit)"
+                                } else {
+                                    "Personnaliser"
+                                }
+                            ) 
+                        },
+                        suffix = {
+                            if (currentUnit.isNotEmpty() && customDistance.isNotEmpty()) {
+                                Text(
+                                    text = currentUnit,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
+                            }
+                        },
+                        enabled = selectedSport.isNotEmpty(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFFFB74D),
+                            unfocusedContainerColor = Color(0xFFFFB74D),
+                            disabledContainerColor = Color(0xFFE0E0E0),
+                            focusedBorderColor = Color(0xFFFF9800),
+                            unfocusedBorderColor = Color(0xFFFF9800),
+                            disabledBorderColor = Color.Gray
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal
+                        ),
+                        singleLine = true
+                    )
+                }
+                
+                // 提示文字
+                Text(
+                    text = "* Veuillez saisir uniquement des chiffres",
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(start = 60.dp, top = 4.dp)
                 )
             }
             
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
+            }  // 结束可滚动内容区域
             
-            // 5. 取消和确认按钮
+            // 5. 取消和确认按钮 - 固定在底部
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // 取消按钮（红色）
@@ -404,9 +395,8 @@ fun SportGoalScreen(
                     )
                 }
             }
-            } // 结束 else 块
-        }
-    }
+        }  // 结束外层 Column
+    }  // 结束 Surface
 }
 
 @Composable

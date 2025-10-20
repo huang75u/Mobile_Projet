@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -39,7 +41,9 @@ fun ExerciseScreen(
     viewModel: ExerciseViewModel = viewModel()
 ) {
     var showGoalDialog by remember { mutableStateOf(false) }
+    var showCalorieGoalDialog by remember { mutableStateOf(false) }
     val sportGoals by viewModel.sportGoals.collectAsState()
+    val dailyCalorieGoal by viewModel.dailyCalorieGoal.collectAsState()
     var editingGoal by remember { mutableStateOf<SportGoal?>(null) }
     
     Box(modifier = Modifier.fillMaxSize()) {
@@ -50,6 +54,8 @@ fun ExerciseScreen(
             // 卡路里统计卡片（顶部）
             CaloriesCard(
                 sportGoals = sportGoals,
+                dailyGoal = dailyCalorieGoal,
+                onGoalClick = { showCalorieGoalDialog = true },
                 onRankingClick = {
                     // TODO: 实现排名功能
                 }
@@ -65,7 +71,7 @@ fun ExerciseScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-            // 显示已添加的运动目标卡片
+            // 显示已完成的运动记录
             items(sportGoals) { goal ->
                 SportGoalCard(
                     goal = goal,
@@ -75,9 +81,6 @@ fun ExerciseScreen(
                     },
                     onDelete = {
                         viewModel.deleteSportGoal(goal.id)
-                    },
-                    onToggleComplete = {
-                        viewModel.toggleSportGoalCompletion(goal.id)
                     }
                 )
             }
@@ -141,12 +144,6 @@ fun ExerciseScreen(
                 usePlatformDefaultWidth = false
             )
         ) {
-            // 获取已使用的运动类型，用于过滤
-            val usedSportTypes = sportGoals
-                .filter { it.id != editingGoal?.id } // 编辑模式下排除当前编辑的项
-                .map { it.sportType }
-                .toSet()
-            
             SportGoalScreen(
                 onDismiss = { 
                     showGoalDialog = false
@@ -154,19 +151,30 @@ fun ExerciseScreen(
                 },
                 onConfirm = { goal ->
                     if (editingGoal != null) {
-                        // 编辑模式：更新现有目标
+                        // 编辑模式：更新现有记录
                         viewModel.updateSportGoal(editingGoal!!.id, goal)
                     } else {
-                        // 新增模式：添加新目标
+                        // 新增模式：添加已完成的运动
                         viewModel.addSportGoal(goal)
                     }
                     showGoalDialog = false
                     editingGoal = null
                 },
-                initialGoal = editingGoal,
-                excludedSportTypes = usedSportTypes
+                initialGoal = editingGoal
             )
         }
+    }
+    
+    // 设置每日卡路里目标对话框
+    if (showCalorieGoalDialog) {
+        SetDailyCalorieGoalDialog(
+            currentGoal = dailyCalorieGoal,
+            onDismiss = { showCalorieGoalDialog = false },
+            onConfirm = { newGoal ->
+                viewModel.setDailyCalorieGoal(newGoal)
+                showCalorieGoalDialog = false
+            }
+        )
     }
 }
 
@@ -174,42 +182,20 @@ fun ExerciseScreen(
 fun SportGoalCard(
     goal: SportGoal,
     onClick: () -> Unit,
-    onDelete: () -> Unit,
-    onToggleComplete: () -> Unit = {}
+    onDelete: () -> Unit
 ) {
     var showOptionsDialog by remember { mutableStateOf(false) }
     
-    // 运动卡片，根据完成状态显示不同颜色 - 多巴胺配色
+    // 已完成的运动卡片 - 橙色多巴胺配色
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(24.dp))
-            .background(
-                if (goal.isCompleted) Color(0xFFFF9F43)  // 完成：活力橙
-                else Color(0xFFBA68C8)                    // 未完成：梦幻紫
-            )
+            .background(Color(0xFFFF9F43))  // 活力橙
             .clickable { showOptionsDialog = true }
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        // 完成状态标记（右上角）
-        if (goal.isCompleted) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF27AE60)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "✓",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
         
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -274,76 +260,43 @@ fun SportGoalCard(
                 }
             },
             confirmButton = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // 完成状态切换按钮
-                    Button(
+                    TextButton(
                         onClick = {
-                            onToggleComplete()
                             showOptionsDialog = false
+                            onClick()
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (goal.isCompleted) Color(0xFFE0E0E0) else Color(0xFF27AE60)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF007AFF)
+                        )
                     ) {
                         Icon(
-                            imageVector = if (goal.isCompleted) Icons.Default.Delete else Icons.Default.Add,
-                            contentDescription = if (goal.isCompleted) "标记为未完成" else "标记为完成",
-                            modifier = Modifier.size(20.dp),
-                            tint = if (goal.isCompleted) Color.Gray else Color.White
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "编辑",
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (goal.isCompleted) "Marquer comme non fait" else "Marquer comme fait",
-                            color = if (goal.isCompleted) Color.Gray else Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Modifier")
                     }
                     
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    TextButton(
+                        onClick = {
+                            showOptionsDialog = false
+                            onDelete()
+                        },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFFEF5350)
+                        )
                     ) {
-                        TextButton(
-                            onClick = {
-                                showOptionsDialog = false
-                                onClick()
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = Color(0xFF007AFF)
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "编辑",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Modifier")
-                        }
-                        
-                        TextButton(
-                            onClick = {
-                                showOptionsDialog = false
-                                onDelete()
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = Color(0xFFEF5350)
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "删除",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Supprimer")
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "删除",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Supprimer")
                     }
                 }
             },
@@ -382,12 +335,14 @@ fun AddGoalCard(onClick: () -> Unit) {
 @Composable
 fun CaloriesCard(
     sportGoals: List<SportGoal>,
+    dailyGoal: Int,
+    onGoalClick: () -> Unit = {},
     onRankingClick: () -> Unit = {}
 ) {
-    val totalCalories = sportGoals.sumOf { it.getCalories() }
-    val completedCalories = sportGoals.filter { it.isCompleted }.sumOf { it.getCalories() }
-    val percentage = if (totalCalories > 0) {
-        (completedCalories / totalCalories * 100).toInt()
+    // 计算已完成的总卡路里
+    val completedCalories = sportGoals.sumOf { it.getCalories() }
+    val percentage = if (dailyGoal > 0) {
+        minOf((completedCalories / dailyGoal * 100).toInt(), 150)  // 上限150%
     } else {
         0
     }
@@ -407,18 +362,33 @@ fun CaloriesCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // 标题栏
+            // 标题栏和目标设置
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Column {
                     Text(
-                    text = "Calories brûlées",
+                        text = "Calories brûlées",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                        color = Color.White
+                    )
+                    TextButton(
+                        onClick = onGoalClick,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color.White
+                        ),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "Objectif : ${dailyGoal} kcal ⚙️",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
                 
                 TextButton(
                     onClick = onRankingClick,
@@ -454,14 +424,14 @@ fun CaloriesCard(
                     horizontalAlignment = Alignment.End
                 ) {
                     Text(
-                        text = "${completedCalories.toInt()} / ${totalCalories.toInt()}kcal",
+                        text = "${completedCalories.toInt()} / ${dailyGoal}kcal",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                     Text(
-                        text = if (sportGoals.isEmpty()) "Ajoutez des objectifs" 
-                               else "${sportGoals.count { it.isCompleted }}/${sportGoals.size} complétés",
+                        text = if (sportGoals.isEmpty()) "Ajoutez vos exercices" 
+                               else "${sportGoals.size} exercice(s) terminé(s)",
                         fontSize = 12.sp,
                         color = Color.White.copy(alpha = 0.9f)
                     )
@@ -516,5 +486,116 @@ fun CustomCircularProgressIndicator(
             color = Color.White
         )
     }
+}
+
+// 设置每日卡路里目标对话框
+@Composable
+fun SetDailyCalorieGoalDialog(
+    currentGoal: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var goalInput by remember { mutableStateOf(currentGoal.toString()) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Définir l'objectif quotidien",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Combien de calories souhaitez-vous brûler aujourd'hui ?",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+                
+                OutlinedTextField(
+                    value = goalInput,
+                    onValueChange = { newValue ->
+                        // 只允许输入数字
+                        if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                            goalInput = newValue
+                        }
+                    },
+                    label = { Text("Objectif (kcal)") },
+                    suffix = { Text("kcal", fontWeight = FontWeight.Bold) },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                
+                Text(
+                    text = "* Recommandé : 300-800 kcal par jour",
+                    fontSize = 11.sp,
+                    color = Color.Gray
+                )
+                
+                // 快捷选择按钮
+                Text(
+                    text = "Objectifs suggérés :",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(300, 500, 800).forEach { preset ->
+                        Button(
+                            onClick = { goalInput = preset.toString() },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (goalInput == preset.toString()) 
+                                    Color(0xFFFF9F43) else Color(0xFFE0E0E0)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "${preset}",
+                                color = if (goalInput == preset.toString()) 
+                                    Color.White else Color.Gray,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val goal = goalInput.toIntOrNull()
+                    if (goal != null && goal > 0) {
+                        onConfirm(goal)
+                    }
+                },
+                enabled = goalInput.toIntOrNull() != null && goalInput.toIntOrNull()!! > 0,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF27AE60)
+                )
+            ) {
+                Text("Confirmer", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annuler")
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 

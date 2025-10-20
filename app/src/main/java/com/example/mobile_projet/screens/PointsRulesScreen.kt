@@ -131,14 +131,14 @@ fun PointsRulesScreen(onBackClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "• Chaque activité complétée : 1 point par 10 kcal brûlées",
+                        text = "• Chaque exercice terminé : 1 point par 10 kcal brûlées",
                         fontSize = 13.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Exemple : Compléter 5km de course (300 kcal) = 30 points",
+                        text = "Exemple : Course 5km (300 kcal) = 30 points",
                         fontSize = 12.sp,
                         color = Color.Gray,
                         lineHeight = 18.sp
@@ -146,34 +146,40 @@ fun PointsRulesScreen(onBackClick: () -> Unit) {
                     
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    // 规则2：百分比里程碑
+                    // 规则2：目标完成度里程碑
                     Text(
-                        text = "🎯 Règle 2 : Bonus de progression quotidienne",
+                        text = "🎯 Règle 2 : Bonus selon l'objectif quotidien",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFFF6F00)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "• 25% des objectifs complétés : +10 points",
+                        text = "• Atteindre 20% de l'objectif : +10 points",
                         fontSize = 13.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
                     )
                     Text(
-                        text = "• 50% des objectifs complétés : +30 points",
+                        text = "• Atteindre 40% de l'objectif : +20 points",
                         fontSize = 13.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
                     )
                     Text(
-                        text = "• 75% des objectifs complétés : +50 points",
+                        text = "• Atteindre 60% de l'objectif : +40 points",
                         fontSize = 13.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
                     )
                     Text(
-                        text = "• 100% des objectifs complétés : +100 points",
+                        text = "• Atteindre 80% de l'objectif : +60 points",
+                        fontSize = 13.sp,
+                        color = Color.Black,
+                        lineHeight = 20.sp
+                    )
+                    Text(
+                        text = "• Atteindre 100% de l'objectif : +100 points",
                         fontSize = 13.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
@@ -181,16 +187,22 @@ fun PointsRulesScreen(onBackClick: () -> Unit) {
                     
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    // 规则3：全部完成奖励
+                    // 规则3：超额完成奖励
                     Text(
-                        text = "⭐ Règle 3 : Bonus de perfection",
+                        text = "⭐ Règle 3 : Bonus de dépassement",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFFF6F00)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "• Complétez TOUS vos objectifs du jour : +50 points supplémentaires",
+                        text = "• Dépasser 100% : +2 points par % supplémentaire",
+                        fontSize = 13.sp,
+                        color = Color.Black,
+                        lineHeight = 20.sp
+                    )
+                    Text(
+                        text = "• Maximum : jusqu'à 150% (bonus max +100 points)",
                         fontSize = 13.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
@@ -198,26 +210,43 @@ fun PointsRulesScreen(onBackClick: () -> Unit) {
                     
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    // 规则4：多项目组合
+                    // 规则4：多样性奖励
                     Text(
-                        text = "🔥 Règle 4 : Bonus multi-activités",
+                        text = "🔥 Règle 4 : Bonus de diversité",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFFF6F00)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "• Complétez 3 activités ou plus : +5 points par activité",
+                        text = "• Faire 3 types d'exercices différents ou plus : +8 points par type",
                         fontSize = 13.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Exemple : 5 activités complétées = 5 × 5 = 25 points bonus",
+                        text = "Exemple : Course, Yoga, Pompes = 3 × 8 = 24 points bonus",
                         fontSize = 12.sp,
                         color = Color.Gray,
                         lineHeight = 18.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // 规则5：下限保护
+                    Text(
+                        text = "⚠️ Règle 5 : Seuil minimum",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFEF5350)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "• Vous devez atteindre au moins 20% de votre objectif quotidien pour gagner des points",
+                        fontSize = 13.sp,
+                        color = Color.Black,
+                        lineHeight = 20.sp
                     )
                 }
             }
@@ -279,33 +308,50 @@ fun PointsRulesScreen(onBackClick: () -> Unit) {
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     Text(
-                        text = "Objectifs du jour :",
+                        text = "📌 Objectif quotidien : 500 kcal",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1976D2)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "Exercices terminés aujourd'hui :",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
                     )
                     Text(
-                        text = "• Course 3km ✓ (180 kcal) → 18 points",
+                        text = "• Course 3km (180 kcal) → 18 points",
                         fontSize = 12.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
                     )
                     Text(
-                        text = "• Pompes 20× ✓ (10 kcal) → 1 point",
+                        text = "• Pompes 20× (10 kcal) → 1 point",
                         fontSize = 12.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
                     )
                     Text(
-                        text = "• Yoga 30min ✓ (90 kcal) → 9 points",
+                        text = "• Yoga 30min (90 kcal) → 9 points",
                         fontSize = 12.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
                     )
                     Text(
-                        text = "• Natation 500m ✗ (75 kcal) → non complété",
+                        text = "• Vélo 5km (200 kcal) → 20 points",
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = Color.Black,
+                        lineHeight = 20.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Total calories : 480 kcal (96% de l'objectif)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1976D2),
                         lineHeight = 20.sp
                     )
                     
@@ -320,19 +366,19 @@ fun PointsRulesScreen(onBackClick: () -> Unit) {
                         color = Color.Black
                     )
                     Text(
-                        text = "• Points de base : 18 + 1 + 9 = 28 points",
+                        text = "• Points de base : 18 + 1 + 9 + 20 = 48 points",
                         fontSize = 12.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
                     )
                     Text(
-                        text = "• Progression 75% : +50 points",
+                        text = "• Bonus 80% atteint : +60 points",
                         fontSize = 12.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
                     )
                     Text(
-                        text = "• Multi-activités (3) : +15 points",
+                        text = "• Bonus diversité (4 types) : +32 points",
                         fontSize = 12.sp,
                         color = Color.Black,
                         lineHeight = 20.sp
@@ -343,7 +389,7 @@ fun PointsRulesScreen(onBackClick: () -> Unit) {
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Text(
-                        text = "🎉 Total : 93 points gagnés aujourd'hui !",
+                        text = "🎉 Total : 140 points gagnés aujourd'hui !",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2E7D32)
