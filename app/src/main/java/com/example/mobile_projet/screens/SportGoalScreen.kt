@@ -19,23 +19,25 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mobile_projet.R
 
 // 运动类型枚举，包含单位信息和卡路里消耗
 enum class SportType(
     val displayName: String, 
     val unit: String,
-    val caloriesPerUnit: Double // 每单位消耗的卡路里
+    val caloriesPerUnit: Double, // 每单位消耗的卡路里
+    val iconRes: Int // 图标资源ID
 ) {
-    RUNNING("Course à pied", "km", 60.0),        // 60 kcal/km
-    CYCLING("Vélo", "km", 40.0),                 // 40 kcal/km
-    SWIMMING("Natation", "m", 0.15),             // 0.15 kcal/m (150 kcal/1000m)
-    WALKING("Marche", "km", 30.0),               // 30 kcal/km
-    YOGA("Yoga", "min", 3.0),                    // 3 kcal/min
-    WEIGHT_TRAINING("Musculation", "min", 5.0),  // 5 kcal/min
-    PUSH_UPS("Pompes", "fois", 0.5),             // 0.5 kcal/次
-    SIT_UPS("Abdos", "fois", 0.3),               // 0.3 kcal/次
-    PULL_UPS("Tractions", "fois", 1.0),          // 1 kcal/次
-    PLANK("Planche", "sec", 0.1);                // 0.1 kcal/秒
+    RUNNING("Course à pied", "km", 60.0, R.drawable.ic_sport_running),        // 60 kcal/km
+    CYCLING("Vélo", "km", 40.0, R.drawable.ic_sport_cycling),                 // 40 kcal/km
+    SWIMMING("Natation", "m", 0.15, R.drawable.ic_sport_swimming),            // 0.15 kcal/m (150 kcal/1000m)
+    WALKING("Marche", "km", 30.0, R.drawable.ic_sport_walking),               // 30 kcal/km
+    YOGA("Yoga", "min", 3.0, R.drawable.ic_sport_yoga),                       // 3 kcal/min
+    WEIGHT_TRAINING("Musculation", "min", 5.0, R.drawable.ic_sport_weight_training),  // 5 kcal/min
+    PUSH_UPS("Pompes", "fois", 0.5, R.drawable.ic_sport_push_ups),            // 0.5 kcal/次
+    SIT_UPS("Abdos", "fois", 0.3, R.drawable.ic_sport_sit_ups),               // 0.3 kcal/次
+    PULL_UPS("Tractions", "fois", 1.0, R.drawable.ic_sport_pull_ups),         // 1 kcal/次
+    JUMP_ROPE("Corde à sauter", "min", 10.0, R.drawable.ic_sport_jump_rope);  // 10 kcal/min (跳绳)
     
     companion object {
         fun fromDisplayName(name: String): SportType? {
@@ -49,6 +51,10 @@ enum class SportType(
         fun getCaloriesForSport(sportName: String, amount: Double): Double {
             val sportType = fromDisplayName(sportName)
             return sportType?.let { it.caloriesPerUnit * amount } ?: 0.0
+        }
+        
+        fun getIconForSport(sportName: String): Int {
+            return fromDisplayName(sportName)?.iconRes ?: R.drawable.ic_exercise
         }
     }
 }
@@ -73,7 +79,8 @@ data class SportGoal(
 fun SportGoalScreen(
     onDismiss: () -> Unit,
     onConfirm: (SportGoal) -> Unit,
-    initialGoal: SportGoal? = null
+    initialGoal: SportGoal? = null,
+    existingSportGoals: List<SportGoal> = emptyList()
 ) {
     var selectedSport by remember { mutableStateOf(initialGoal?.sportType ?: "") }
     var expandedSportMenu by remember { mutableStateOf(false) }
@@ -99,8 +106,17 @@ fun SportGoalScreen(
     // 获取当前选择运动的单位
     val currentUnit = SportType.getUnitForSport(selectedSport)
     
-    // 所有运动类型都可选（允许重复添加）
-    val sportTypes = SportType.values().map { it.displayName }
+    // 过滤掉已添加的运动类型（编辑模式除外）
+    val sportTypes = if (initialGoal != null) {
+        // 编辑模式：显示所有运动类型
+        SportType.values().map { it.displayName }
+    } else {
+        // 新增模式：只显示未添加的运动类型
+        val existingSportTypes = existingSportGoals.map { it.sportType }.toSet()
+        SportType.values()
+            .map { it.displayName }
+            .filter { it !in existingSportTypes }
+    }
     
     val keyboardController = LocalSoftwareKeyboardController.current
     
