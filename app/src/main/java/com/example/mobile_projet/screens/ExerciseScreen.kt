@@ -51,7 +51,39 @@ fun ExerciseScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            // 卡路里统计卡片（顶部）
+            // 顶部标题栏
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 左侧图标占位
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFFF9F43)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "🏆",
+                        fontSize = 24.sp
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                // 标题文字
+                Text(
+                    text = "Objectifs quotidiens",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
+            
+            // 卡路里统计卡片
             CaloriesCard(
                 sportGoals = sportGoals,
                 dailyGoal = dailyCalorieGoal,
@@ -186,12 +218,12 @@ fun SportGoalCard(
 ) {
     var showOptionsDialog by remember { mutableStateOf(false) }
     
-    // 已完成的运动卡片 - 橙色多巴胺配色
+    // 已完成的运动卡片 - 橙色配色，匹配设计图
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFFFF9F43))  // 活力橙
+            .background(Color(0xFFFF9B4E))  // 橙色，匹配设计图
             .clickable { showOptionsDialog = true }
             .padding(16.dp),
         contentAlignment = Alignment.Center
@@ -311,21 +343,21 @@ fun SportGoalCard(
     }
 }
 
-// 添加运动目标的卡片按钮 - 多巴胺配色
+// 添加运动目标的卡片按钮
 @Composable
 fun AddGoalCard(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFFFF6B9D))  // 甜蜜粉
+            .background(Color(0xFFFFB380))  // 浅橙色，匹配设计图
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = Icons.Default.Add,
             contentDescription = "添加运动目标",
-            tint = Color.White,
+            tint = Color(0xFF8D6E63),  // 深灰褐色，匹配设计图
             modifier = Modifier.size(48.dp)
         )
     }
@@ -353,7 +385,7 @@ fun CaloriesCard(
             .padding(16.dp),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF81D4FA)  // 天空蓝
+            containerColor = Color(0xFFB0B0B0)  // 灰色背景，匹配设计图
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -373,12 +405,12 @@ fun CaloriesCard(
                         text = "Calories brûlées",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color.Black
                     )
                     TextButton(
                         onClick = onGoalClick,
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = Color.White
+                            contentColor = Color.Black
                         ),
                         contentPadding = PaddingValues(0.dp)
                     ) {
@@ -393,7 +425,7 @@ fun CaloriesCard(
                 TextButton(
                     onClick = onRankingClick,
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color.White
+                        contentColor = Color.Black
                     )
                 ) {
                     Text("Classement »", fontSize = 14.sp, fontWeight = FontWeight.Bold)
@@ -413,7 +445,7 @@ fun CaloriesCard(
                     percentage = percentage,
                     size = 80.dp,
                     strokeWidth = 8.dp,
-                    backgroundColor = Color(0xFFFFE082),  // 亮黄色背景
+                    backgroundColor = Color(0xFF4A4A4A),  // 深灰色背景
                     progressColor = Color(0xFFFF9F43)     // 橙色进度
                 )
                 
@@ -425,15 +457,15 @@ fun CaloriesCard(
                 ) {
                     Text(
                         text = "${completedCalories.toInt()} / ${dailyGoal}kcal",
-                        fontSize = 24.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color(0xFFFF5722)  // 橙红色，类似设计图
                     )
                     Text(
                         text = if (sportGoals.isEmpty()) "Ajoutez vos exercices" 
                                else "${sportGoals.size} exercice(s) terminé(s)",
                         fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.9f)
+                        color = Color.Black.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -483,7 +515,7 @@ fun CustomCircularProgressIndicator(
             text = "$percentage%",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = Color(0xFFFF9F43)  // 橙色文字，匹配设计图
         )
     }
 }
