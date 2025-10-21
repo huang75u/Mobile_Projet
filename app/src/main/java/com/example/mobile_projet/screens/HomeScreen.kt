@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,14 +16,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.mobile_projet.R
+import com.example.mobile_projet.data.ImageStorage
 import com.example.mobile_projet.data.UserDataManager
 import com.example.mobile_projet.utils.LocationHelper
 import com.example.mobile_projet.viewmodels.ExerciseViewModel
@@ -108,12 +113,16 @@ fun HomeScreen(
         }
     }
     
+    // 获取头像文件
+    var avatarImageFile by remember { mutableStateOf(ImageStorage.getAvatarImageFile(context)) }
+    var avatarImageKey by remember { mutableStateOf(0) }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 顶部区域 - Welcome和用户昵称
+        // 顶部区域 - Welcome和用户昵称+头像
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -127,12 +136,55 @@ fun HomeScreen(
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
-            Text(
-                text = username,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
+            
+            // 昵称和头像
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
+            ) {
+                // 头像
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color(0xFF2196F3), CircleShape)
+                ) {
+                    if (avatarImageFile != null) {
+                        key(avatarImageKey) {
+                            AsyncImage(
+                                model = avatarImageFile,
+                                contentDescription = "头像",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    } else {
+                        // 默认头像
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFF9C89CC)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_profile),
+                                contentDescription = "默认头像",
+                                modifier = Modifier.size(24.dp),
+                                tint = Color.White
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = username,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+            }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
