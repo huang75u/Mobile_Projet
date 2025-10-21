@@ -32,7 +32,7 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     
     init {
         // 默认加载巴黎的天气（可以改成其他城市）
-        loadWeather("Paris")
+        loadWeather("Metz")
     }
     
     /**
