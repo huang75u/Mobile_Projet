@@ -68,7 +68,7 @@ fun ExerciseScreen(
                     modifier = Modifier.size(90.dp)
                 )
                 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 
                 // 标题文字
                 Text(
@@ -244,7 +244,7 @@ fun SportGoalCard(
             // 运动图标
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(70.dp)
                     .clip(CircleShape)
                     .background(Color(0x33000000)),
                 contentAlignment = Alignment.Center
@@ -253,7 +253,7 @@ fun SportGoalCard(
                     painter = painterResource(id = SportType.getIconForSport(goal.sportType)),
                     contentDescription = goal.sportType,
                     tint = Color.White,
-                    modifier = Modifier.size(75.dp)
+                    modifier = Modifier.size(55.dp)
                 )
             }
             
@@ -371,7 +371,7 @@ fun CaloriesCard(
     // 计算已完成的总卡路里
     val completedCalories = sportGoals.sumOf { it.getCalories() }
     val percentage = if (dailyGoal > 0) {
-        minOf((completedCalories / dailyGoal * 100).toInt(), 150)  // 上限150%
+        minOf((completedCalories / dailyGoal * 100).toInt(), 100)  // 上限100%
     } else {
         0
     }
@@ -382,7 +382,7 @@ fun CaloriesCard(
             .padding(16.dp),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFB0B0B0)  // 灰色背景，匹配设计图
+            containerColor = Color(0xFFC5C5C5)  // 灰色背景，匹配设计图
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -413,7 +413,7 @@ fun CaloriesCard(
                     ) {
                         Text(
                             text = "Objectif : ${dailyGoal} kcal ⚙️",
-                            fontSize = 20.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -461,7 +461,7 @@ fun CaloriesCard(
                     Text(
                         text = if (sportGoals.isEmpty()) "Ajoutez vos exercices" 
                                else "${sportGoals.size} exercice(s) terminé(s)",
-                        fontSize = 20.sp,
+                        fontSize = 12.sp,
                         color = Color.Black.copy(alpha = 0.7f)
                     )
                 }

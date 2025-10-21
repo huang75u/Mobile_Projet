@@ -20,11 +20,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mobile_projet.R
 import com.example.mobile_projet.data.UserDataManager
 import com.example.mobile_projet.viewmodels.ExerciseViewModel
+import com.example.mobile_projet.viewmodels.WeatherViewModel
+import com.example.mobile_projet.viewmodels.WeatherUiState
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun HomeScreen(viewModel: ExerciseViewModel = viewModel()) {
+fun HomeScreen(
+    exerciseViewModel: ExerciseViewModel = viewModel(),
+    weatherViewModel: WeatherViewModel = viewModel()
+) {
     val context = LocalContext.current
     val userPrefs = remember { UserDataManager.getUserPreferences(context) }
     
@@ -33,8 +38,11 @@ fun HomeScreen(viewModel: ExerciseViewModel = viewModel()) {
     var points by remember { mutableStateOf(userPrefs.points) }
     
     // 监听运动目标和卡路里数据
-    val sportGoals by viewModel.sportGoals.collectAsState()
-    val dailyCalorieGoal by viewModel.dailyCalorieGoal.collectAsState()
+    val sportGoals by exerciseViewModel.sportGoals.collectAsState()
+    val dailyCalorieGoal by exerciseViewModel.dailyCalorieGoal.collectAsState()
+    
+    // 监听天气数据
+    val weatherState by weatherViewModel.weatherState.collectAsState()
     
     // 实时更新用户数据
     LaunchedEffect(Unit) {
@@ -105,27 +113,160 @@ fun HomeScreen(viewModel: ExerciseViewModel = viewModel()) {
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // 天气区域（预留）
+        // 天气区域
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp),
+                .height(140.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color(0xFFE3F2FD)
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Zone météo",
-                    fontSize = 18.sp,
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Medium
-                )
+            when (val state = weatherState) {
+                is WeatherUiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(40.dp),
+                            color = Color(0xFF2196F3)
+                        )
+                    }
+                }
+                is WeatherUiState.Success -> {
+                    // 获取当前日期和星期
+                    val calendar = Calendar.getInstance()
+                    val dateFormat = SimpleDateFormat("dd/MM", Locale.getDefault())
+                    val dayFormat = SimpleDateFormat("EEEE", Locale.FRENCH)
+                    val currentDate = dateFormat.format(calendar.time)
+                    val currentDay = dayFormat.format(calendar.time).replaceFirstChar { it.uppercase() }
+                    
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp)
+                    ) {
+                        // 顶部：日期和星期
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = currentDate,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.Black
+                            )
+                            Text(
+                                text = currentDay,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.Black
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        // 中间：天气主要信息
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 左侧：温度和天气图标
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = state.weatherData.getWeatherEmoji(),
+                                    fontSize = 44.sp
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "${state.weatherData.temperature}°C",
+                                        fontSize = 32.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                    Text(
+                                        text = state.weatherData.description.replaceFirstChar { 
+                                            it.uppercase() 
+                                        },
+                                        fontSize = 13.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
+                            
+                            // 右侧：详细天气信息
+                            Column(
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                Text(
+                                    text = state.weatherData.cityName,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.Black
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "↑${state.weatherData.tempMax}°",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFFFF6B6B),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "↓${state.weatherData.tempMin}°",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF4ECDC4),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "💧 ${state.weatherData.humidity}%",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    text = "💨 ${state.weatherData.windSpeed} m/s",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
+                is WeatherUiState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "❌",
+                                fontSize = 32.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Météo indisponible",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
             }
         }
         
@@ -165,12 +306,13 @@ fun HomeScreen(viewModel: ExerciseViewModel = viewModel()) {
                 }
                 
                 // 每周目标显示（7天）
-                LazyRow(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(weeklyGoals.size) { index ->
-                        WeeklyGoalItem(weeklyGoals[index])
+                    weeklyGoals.forEach { dayGoal ->
+                        WeeklyGoalItem(dayGoal)
                     }
                 }
             }
@@ -194,26 +336,26 @@ fun HomeScreen(viewModel: ExerciseViewModel = viewModel()) {
                 ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_calories),
                         contentDescription = "卡路里",
                         modifier = Modifier.size(48.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
+        Text(
                         text = "${todayCalories.toInt()}",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFFF6F00)
                     )
-                    Text(
+        Text(
                         text = "Calories",
                         fontSize = 14.sp,
                         color = Color.Gray
@@ -285,20 +427,20 @@ fun WeeklyGoalItem(dayStatus: DayGoalStatus) {
     
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(60.dp)
+        modifier = Modifier.width(45.dp)
     ) {
         Text(
             text = dayName,
-            fontSize = 14.sp,
+            fontSize = 11.sp,
             color = Color.Gray,
             fontWeight = FontWeight.Medium
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         
         // 只在非未来日期时显示图标
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(60.dp)
+            modifier = Modifier.size(40.dp)
         ) {
             if (!isFutureDay) {
                 Image(
@@ -306,7 +448,7 @@ fun WeeklyGoalItem(dayStatus: DayGoalStatus) {
                         id = if (dayStatus.achieved) R.drawable.ic_check else R.drawable.ic_cross
                     ),
                     contentDescription = if (dayStatus.achieved) "已完成" else "未完成",
-                    modifier = Modifier.size(50.dp)
+                    modifier = Modifier.size(32.dp)
                 )
             }
         }
