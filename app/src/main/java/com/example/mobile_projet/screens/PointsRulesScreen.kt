@@ -17,6 +17,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mobile_projet.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,9 +29,10 @@ fun PointsRulesScreen(onBackClick: () -> Unit) {
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            painter = painterResource(id = R.drawable.retourne),
                             contentDescription = "返回",
-                            tint = Color.Black
+                            tint = Color.Unspecified,  // 保持原图颜色
+                            modifier = Modifier.size(60.dp)
                         )
                     }
                 },
@@ -51,30 +53,21 @@ fun PointsRulesScreen(onBackClick: () -> Unit) {
             // 标题部分
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // 左侧图标（绿色圆形美元图标）
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = Color(0xFF4CAF50),
-                    modifier = Modifier.size(50.dp)
+                // 左侧RULES图标
+                Icon(
+                    painter = painterResource(id = R.drawable.rules),
+                    contentDescription = "Rules",
+                    tint = Color.Unspecified,  // 保持原图颜色
+                    modifier = Modifier.size(60.dp)
+                )
+                
+                // 标题文本（居中）
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "$",
-                            color = Color.White,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                // 标题文本
-                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Règles d'attribution",
                         fontSize = 20.sp,
@@ -89,20 +82,8 @@ fun PointsRulesScreen(onBackClick: () -> Unit) {
                     )
                 }
                 
-                // 右侧RULES徽章
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFF44336),
-                    modifier = Modifier.padding(start = 8.dp)
-                ) {
-                    Text(
-                        text = "RULES",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
-                }
+                // 占位（保持对称）
+                Spacer(modifier = Modifier.size(60.dp))
             }
             
             Spacer(modifier = Modifier.height(32.dp))
