@@ -33,10 +33,11 @@ import com.example.mobile_projet.R
 import com.example.mobile_projet.data.ImageStorage
 import com.example.mobile_projet.data.UserDataManager
 import com.example.mobile_projet.data.UserPreferences
+import androidx.navigation.NavController
 import java.io.File
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(navController: NavController? = null) {
     val context = LocalContext.current
     val userPrefs = remember { UserDataManager.getUserPreferences(context) }
     
@@ -321,6 +322,27 @@ fun ProfileScreen() {
             }
             
             Spacer(modifier = Modifier.height(24.dp))
+            
+            // 好友列表入口
+            Button(
+                onClick = { navController?.navigate("friends") },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE3F2FD)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+                    .height(56.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_friends),
+                    contentDescription = "好友列表",
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(text = "List d'amis", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
             
             // 步数卡片
             Card(
