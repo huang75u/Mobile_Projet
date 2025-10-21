@@ -310,7 +310,7 @@ fun ProfileScreen() {
                 Image(
                     painter = painterResource(id = R.drawable.ic_points),
                     contentDescription = "积分",
-                    modifier = Modifier.size(50.dp)
+                    modifier = Modifier.size(32.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
