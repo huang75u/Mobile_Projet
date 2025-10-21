@@ -21,6 +21,10 @@ data class Main(
     val temp: Double,
     @SerializedName("feels_like")
     val feelsLike: Double,
+    @SerializedName("temp_min")
+    val tempMin: Double,
+    @SerializedName("temp_max")
+    val tempMax: Double,
     @SerializedName("humidity")
     val humidity: Int
 )
@@ -46,6 +50,8 @@ data class Wind(
  */
 data class WeatherData(
     val temperature: Int,
+    val tempMin: Int,
+    val tempMax: Int,
     val description: String,
     val humidity: Int,
     val windSpeed: Double,
@@ -56,6 +62,8 @@ data class WeatherData(
         fun fromWeatherResponse(response: WeatherResponse): WeatherData {
             return WeatherData(
                 temperature = response.main.temp.toInt(),
+                tempMin = response.main.tempMin.toInt(),
+                tempMax = response.main.tempMax.toInt(),
                 description = response.weather.firstOrNull()?.description ?: "",
                 humidity = response.main.humidity,
                 windSpeed = response.wind.speed,

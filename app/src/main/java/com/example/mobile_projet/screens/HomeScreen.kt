@@ -117,7 +117,7 @@ fun HomeScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp),
+                .height(140.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color(0xFFE3F2FD)
@@ -137,60 +137,112 @@ fun HomeScreen(
                     }
                 }
                 is WeatherUiState.Success -> {
-                    Row(
+                    // 获取当前日期和星期
+                    val calendar = Calendar.getInstance()
+                    val dateFormat = SimpleDateFormat("dd/MM", Locale.getDefault())
+                    val dayFormat = SimpleDateFormat("EEEE", Locale.FRENCH)
+                    val currentDate = dateFormat.format(calendar.time)
+                    val currentDay = dayFormat.format(calendar.time).replaceFirstChar { it.uppercase() }
+                    
+                    Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(12.dp)
                     ) {
-                        // 左侧：温度和天气图标
+                        // 顶部：日期和星期
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top
                         ) {
                             Text(
-                                text = state.weatherData.getWeatherEmoji(),
-                                fontSize = 48.sp
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(
-                                    text = "${state.weatherData.temperature}°C",
-                                    fontSize = 36.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-                                Text(
-                                    text = state.weatherData.description.replaceFirstChar { 
-                                        it.uppercase() 
-                                    },
-                                    fontSize = 14.sp,
-                                    color = Color.Gray
-                                )
-                            }
-                        }
-                        
-                        // 右侧：其他天气信息
-                        Column(
-                            horizontalAlignment = Alignment.End
-                        ) {
-                            Text(
-                                text = state.weatherData.cityName,
-                                fontSize = 16.sp,
+                                text = currentDate,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Color.Black
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "💧 ${state.weatherData.humidity}%",
+                                text = currentDay,
                                 fontSize = 14.sp,
-                                color = Color.Gray
+                                fontWeight = FontWeight.Medium,
+                                color = Color.Black
                             )
-                            Text(
-                                text = "💨 ${state.weatherData.windSpeed} m/s",
-                                fontSize = 14.sp,
-                                color = Color.Gray
-                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        // 中间：天气主要信息
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 左侧：温度和天气图标
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = state.weatherData.getWeatherEmoji(),
+                                    fontSize = 44.sp
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "${state.weatherData.temperature}°C",
+                                        fontSize = 32.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                    Text(
+                                        text = state.weatherData.description.replaceFirstChar { 
+                                            it.uppercase() 
+                                        },
+                                        fontSize = 13.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
+                            
+                            // 右侧：详细天气信息
+                            Column(
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                Text(
+                                    text = state.weatherData.cityName,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.Black
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "↑${state.weatherData.tempMax}°",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFFFF6B6B),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "↓${state.weatherData.tempMin}°",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF4ECDC4),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "💧 ${state.weatherData.humidity}%",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    text = "💨 ${state.weatherData.windSpeed} m/s",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
+                            }
                         }
                     }
                 }
