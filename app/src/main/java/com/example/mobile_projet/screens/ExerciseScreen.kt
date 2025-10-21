@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -33,6 +34,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.mobile_projet.R
 import com.example.mobile_projet.viewmodels.ExerciseViewModel
 
 @Composable
@@ -58,19 +60,13 @@ fun ExerciseScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 左侧图标占位
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFFF9F43)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "🏆",
-                        fontSize = 24.sp
-                    )
-                }
+                // 左侧图标
+                Icon(
+                    painter = painterResource(id = R.drawable.exercise_quotidiens),
+                    contentDescription = "Objectifs quotidiens",
+                    tint = Color.Unspecified,  // 保持原图颜色
+                    modifier = Modifier.size(90.dp)
+                )
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
@@ -133,13 +129,13 @@ fun ExerciseScreen(
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = 8.dp),
+                .padding(top = 30.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(
                 shape = CircleShape,
                 color = Color.Black,
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier.size(32.dp)
             ) {
                 IconButton(
                     onClick = { navController.navigate("points_rules") },
@@ -149,7 +145,7 @@ fun ExerciseScreen(
                         imageVector = Icons.Default.Info,
                         contentDescription = "积分规则",
                         tint = Color.White,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(25.dp)
                     )
                 }
             }
@@ -159,7 +155,7 @@ fun ExerciseScreen(
                 fontSize = 10.sp,
                 color = Color.Black,
                 textAlign = TextAlign.Center,
-                lineHeight = 12.sp,
+                lineHeight = 19.sp,
                 fontWeight = FontWeight.Normal
             )
         }
@@ -192,7 +188,8 @@ fun ExerciseScreen(
                     showGoalDialog = false
                     editingGoal = null
                 },
-                initialGoal = editingGoal
+                initialGoal = editingGoal,
+                existingSportGoals = sportGoals
             )
         }
     }
@@ -237,26 +234,26 @@ fun SportGoalCard(
             // 运动类型名称
             Text(
                 text = goal.sportType,
-                fontSize = 16.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF2D3436),
                 textAlign = TextAlign.Center,
                 maxLines = 1
             )
             
-            // 图标占位符（留给用户添加图标）
+            // 运动图标
             Box(
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(80.dp)
                     .clip(CircleShape)
                     .background(Color(0x33000000)),
                 contentAlignment = Alignment.Center
             ) {
-                // TODO: 在这里添加运动图标
-                // Icon(painter = painterResource(id = R.drawable.icon_name), ...)
-                Text(
-                    text = "🏃", // 临时占位符
-                    fontSize = 32.sp
+                Icon(
+                    painter = painterResource(id = SportType.getIconForSport(goal.sportType)),
+                    contentDescription = goal.sportType,
+                    tint = Color.White,
+                    modifier = Modifier.size(75.dp)
                 )
             }
             
@@ -307,7 +304,7 @@ fun SportGoalCard(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "编辑",
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Modifier")
@@ -403,7 +400,7 @@ fun CaloriesCard(
                 Column {
                     Text(
                         text = "Calories brûlées",
-                        fontSize = 18.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
                     )
@@ -416,7 +413,7 @@ fun CaloriesCard(
                     ) {
                         Text(
                             text = "Objectif : ${dailyGoal} kcal ⚙️",
-                            fontSize = 12.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -446,7 +443,7 @@ fun CaloriesCard(
                     size = 80.dp,
                     strokeWidth = 8.dp,
                     backgroundColor = Color(0xFF4A4A4A),  // 深灰色背景
-                    progressColor = Color(0xFFFF9F43)     // 橙色进度
+                    progressColor = Color(0xFFFF9B4E)     // 橙色进度
                 )
                 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -464,7 +461,7 @@ fun CaloriesCard(
                     Text(
                         text = if (sportGoals.isEmpty()) "Ajoutez vos exercices" 
                                else "${sportGoals.size} exercice(s) terminé(s)",
-                        fontSize = 12.sp,
+                        fontSize = 20.sp,
                         color = Color.Black.copy(alpha = 0.7f)
                     )
                 }
@@ -515,7 +512,7 @@ fun CustomCircularProgressIndicator(
             text = "$percentage%",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFFFF9F43)  // 橙色文字，匹配设计图
+            color = Color(0xFFFF5722)  // 橙色文字，匹配设计图
         )
     }
 }
