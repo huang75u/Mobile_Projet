@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +25,8 @@ import coil.compose.AsyncImage
 import com.example.mobile_projet.R
 import com.example.mobile_projet.viewmodels.FriendsUiState
 import com.example.mobile_projet.viewmodels.FriendsViewModel
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 
 @Composable
 fun FriendsScreen(
@@ -96,7 +99,32 @@ fun FriendsScreen(
                 }
             }
             is FriendsUiState.Ready -> {
+                val clipboard = LocalClipboardManager.current
                 Column(modifier = Modifier.fillMaxSize()) {
+                    // 显示当前用户UID，便于分享添加
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "Mon UID:", fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = s.currentUid, color = Color(0xFF424242))
+                            Spacer(modifier = Modifier.weight(1f))
+                            IconButton(onClick = { clipboard.setText(AnnotatedString(s.currentUid)) }) {
+                                Icon(imageVector = Icons.Filled.ContentCopy, contentDescription = "Copier UID")
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                     s.friends.forEach { preview ->
                         FriendRow(
                             avatarUrl = preview.user.photoUrl,
