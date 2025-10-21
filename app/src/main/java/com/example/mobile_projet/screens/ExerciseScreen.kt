@@ -72,10 +72,11 @@ fun ExerciseScreen(
                 
                 // 标题文字
                 Text(
-                    text = "Objectifs quotidiens",
-                    fontSize = 20.sp,
+                    text = "Objectifs\nquotidiens",
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = Color.Black,
+                    lineHeight = 24.sp
                 )
             }
             
