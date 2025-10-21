@@ -13,13 +13,32 @@ class FriendsRepository(
 ) {
     suspend fun signInAnonymouslyIfNeeded(): String {
         val user = auth.currentUser
-        return if (user != null) user.uid else auth.signInAnonymously().await().user!!.uid
+        val uid = if (user != null) user.uid else auth.signInAnonymously().await().user!!.uid
+        ensureUserDocument(uid)
+        return uid
     }
     
     // friends list stored under users/{uid}/friends -> { friendUid: true }
     private fun friendsCollection(uid: String) = db.collection("users").document(uid).collection("friends")
     private fun userDoc(uid: String) = db.collection("users").document(uid)
     private fun activitiesCollection(uid: String) = userDoc(uid).collection("activities")
+    
+    private suspend fun ensureUserDocument(uid: String) {
+        val docRef = userDoc(uid)
+        val snap = docRef.get().await()
+        if (!snap.exists()) {
+            val default = mapOf(
+                "displayName" to "",
+                "photoUrl" to null,
+                "createdAt" to System.currentTimeMillis(),
+                "updatedAt" to System.currentTimeMillis()
+            )
+            docRef.set(default).await()
+        } else {
+            // update timestamp for visibility in console
+            docRef.update("updatedAt", System.currentTimeMillis()).await()
+        }
+    }
     
     suspend fun addFriend(currentUid: String, friendUid: String) {
         friendsCollection(currentUid).document(friendUid).set(mapOf("addedAt" to System.currentTimeMillis())).await()
