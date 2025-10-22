@@ -12,12 +12,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-<<<<<<< HEAD
 import com.example.mobile_projet.data.firebase.FriendsRepository
-=======
 import java.text.SimpleDateFormat
 import java.util.*
->>>>>>> 00d9a67b996dce7bacf135909b030d7626779f72
 
 class ExerciseViewModel(application: Application) : AndroidViewModel(application) {
     
