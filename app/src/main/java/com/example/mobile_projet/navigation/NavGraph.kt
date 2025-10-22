@@ -9,6 +9,7 @@ import com.example.mobile_projet.screens.ExerciseScreen
 import com.example.mobile_projet.screens.FriendDetailsScreen
 import com.example.mobile_projet.screens.FriendsScreen
 import com.example.mobile_projet.screens.HomeScreen
+import com.example.mobile_projet.screens.LeaderboardScreen
 import com.example.mobile_projet.screens.PointsRulesScreen
 import com.example.mobile_projet.screens.ProfileScreen
 
@@ -40,6 +41,9 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         composable(route = "friend_details/{friendUid}") { backStackEntry ->
             val uid = backStackEntry.arguments?.getString("friendUid") ?: ""
             FriendDetailsScreen(friendUid = uid, onBack = { navController.popBackStack() })
+        }
+        composable(route = "leaderboard") {
+            LeaderboardScreen(onBack = { navController.popBackStack() })
         }
     }
 }

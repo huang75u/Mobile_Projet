@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -70,7 +71,11 @@ fun FriendsScreen(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(shape = CircleShape, color = Color(0xFFD6EAF8)) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFFD6EAF8),
+                    modifier = Modifier.clickable { showAddDialog = true }
+                ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "添加好友",
@@ -81,7 +86,6 @@ fun FriendsScreen(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = "Ajouter des amis", fontSize = 18.sp)
                 Spacer(modifier = Modifier.weight(1f))
-                TextButton(onClick = { showAddDialog = true }) { Text("Ajouter") }
             }
         }
         
@@ -216,9 +220,17 @@ private fun FriendRow(
         Spacer(modifier = Modifier.width(12.dp))
         
         // 今日项目名（最多两个）
-        projectNames.take(2).forEach { name ->
+        projectNames.take(2).forEachIndexed { idx, name ->
+            val display = if (idx == 1 && name.length > 8) "..." else name
             Surface(shape = RoundedCornerShape(10.dp), color = Color.White) {
-                Text(text = name, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                Text(
+                    text = display,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .widthIn(min = 0.dp, max = if (idx == 0) 110.dp else 80.dp)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                )
             }
             Spacer(modifier = Modifier.width(8.dp))
         }
@@ -229,12 +241,12 @@ private fun FriendRow(
         Surface(
             shape = RoundedCornerShape(10.dp),
             color = Color(0xFFFEEFB3),
-            modifier = Modifier.clickable { onShowAll() }
+            modifier = Modifier
+                .widthIn(min = 36.dp)
+                .clickable { onShowAll() }
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal =10.dp, vertical = 6.dp)) {
                 Image(painter = painterResource(id = R.drawable.ic_eye), contentDescription = "show all", modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(text = if (hasMore) "..." else "OK")
             }
         }
     }
