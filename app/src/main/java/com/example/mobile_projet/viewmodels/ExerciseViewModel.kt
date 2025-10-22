@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.example.mobile_projet.data.firebase.FriendsRepository
 
 class ExerciseViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -21,6 +22,7 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
     )
     private val gson = Gson()
     private val userPrefs = UserDataManager.getUserPreferences(application)
+    private val repo = FriendsRepository()
     
     private val _sportGoals = MutableStateFlow<List<SportGoal>>(emptyList())
     val sportGoals: StateFlow<List<SportGoal>> = _sportGoals.asStateFlow()
@@ -73,6 +75,16 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
         _sportGoals.value = _sportGoals.value + goal
         saveSportGoals()
         calculateAndUpdatePoints()
+        // 同步到 Firebase
+        viewModelScope.launch {
+            try {
+                val uid = repo.signInAnonymouslyIfNeeded()
+                // 以本地 goal.id 作为 docId，后续可更新/删除
+                repo.upsertActivity(uid, goal.id, goal.sportType, goal.getCalories().toInt(), System.currentTimeMillis())
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
     
     fun updateSportGoal(goalId: String, updatedGoal: SportGoal) {
@@ -81,12 +93,30 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
         }
         saveSportGoals()
         calculateAndUpdatePoints()
+        // 同步到 Firebase（更新）
+        viewModelScope.launch {
+            try {
+                val uid = repo.signInAnonymouslyIfNeeded()
+                repo.upsertActivity(uid, goalId, updatedGoal.sportType, updatedGoal.getCalories().toInt(), System.currentTimeMillis())
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
     
     fun deleteSportGoal(goalId: String) {
         _sportGoals.value = _sportGoals.value.filter { it.id != goalId }
         saveSportGoals()
         calculateAndUpdatePoints()
+        // 同步到 Firebase（删除）
+        viewModelScope.launch {
+            try {
+                val uid = repo.signInAnonymouslyIfNeeded()
+                repo.deleteActivity(uid, goalId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
     
     // 新的积分计算规则

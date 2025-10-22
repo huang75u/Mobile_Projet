@@ -35,11 +35,18 @@ import com.example.mobile_projet.data.UserDataManager
 import com.example.mobile_projet.data.UserPreferences
 import androidx.navigation.NavController
 import java.io.File
+import com.example.mobile_projet.data.firebase.FriendsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @Composable
 fun ProfileScreen(navController: NavController? = null) {
     val context = LocalContext.current
     val userPrefs = remember { UserDataManager.getUserPreferences(context) }
+    val scope = rememberCoroutineScope()
+    val repo = remember { FriendsRepository() }
     
     var username by remember { mutableStateOf(userPrefs.username) }
     var points by remember { mutableStateOf(userPrefs.points) }
@@ -85,6 +92,18 @@ fun ProfileScreen(navController: NavController? = null) {
             if (ImageStorage.saveAvatarImage(context, it)) {
                 avatarImageFile = ImageStorage.getAvatarImageFile(context)
                 avatarImageKey++ // 强制刷新图片
+                // 同步上传到 Firebase（从已保存的本地文件读取，避免部分URI读不到的问题）
+                scope.launch {
+                    try {
+                        val uid = repo.signInAnonymouslyIfNeeded()
+                        val bytes = avatarImageFile?.readBytes()
+                        if (bytes != null && bytes.isNotEmpty()) {
+                            repo.uploadAvatarAndSave(uid, bytes)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
             }
         }
     }
@@ -267,6 +286,15 @@ fun ProfileScreen(navController: NavController? = null) {
                                 username = tempUsername
                                 userPrefs.username = tempUsername
                                 isEditingUsername = false
+                                // 同步昵称到 Firebase
+                                scope.launch {
+                                    try {
+                                        val uid = repo.signInAnonymouslyIfNeeded()
+                                        repo.updateDisplayName(uid, tempUsername)
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                }
                             },
                             modifier = Modifier.height(40.dp)
                         ) {

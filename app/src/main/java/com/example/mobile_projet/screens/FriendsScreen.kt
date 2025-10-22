@@ -101,7 +101,7 @@ fun FriendsScreen(
             is FriendsUiState.Ready -> {
                 val clipboard = LocalClipboardManager.current
                 Column(modifier = Modifier.fillMaxSize()) {
-                    // 显示当前用户UID，便于分享添加
+                    // 我的信息卡片（头像、昵称、当日卡路里、UID复制）
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -115,12 +115,33 @@ fun FriendsScreen(
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = "Mon UID:", fontWeight = FontWeight.SemiBold)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = s.currentUid, color = Color(0xFF424242))
-                            Spacer(modifier = Modifier.weight(1f))
-                            IconButton(onClick = { clipboard.setText(AnnotatedString(s.currentUid)) }) {
-                                Icon(imageVector = Icons.Filled.ContentCopy, contentDescription = "Copier UID")
+                            // 头像
+                            Surface(shape = CircleShape, color = Color(0xFFE8F0FE)) {
+                                if (!s.myPhotoUrl.isNullOrBlank()) {
+                                    AsyncImage(
+                                        model = s.myPhotoUrl,
+                                        contentDescription = "me",
+                                        modifier = Modifier.size(44.dp).clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Image(painter = painterResource(id = R.drawable.ic_profile), contentDescription = "me", modifier = Modifier.size(44.dp))
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = s.myDisplayName.ifBlank { "Pseudo" }, fontWeight = FontWeight.Bold)
+                                Text(text = "Aujourd'hui: ${s.myTodayCalories} kcal", fontSize = 12.sp, color = Color.Gray)
+                            }
+                            // UID复制
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(text = "UID", fontSize = 12.sp, color = Color.Gray)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = s.currentUid.take(10) + "...", color = Color(0xFF424242))
+                                    IconButton(onClick = { clipboard.setText(AnnotatedString(s.currentUid)) }) {
+                                        Icon(imageVector = Icons.Filled.ContentCopy, contentDescription = "Copier UID")
+                                    }
+                                }
                             }
                         }
                     }

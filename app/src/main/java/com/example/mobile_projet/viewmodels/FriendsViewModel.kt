@@ -14,7 +14,10 @@ sealed class FriendsUiState {
     object Loading: FriendsUiState()
     data class Ready(
         val currentUid: String,
-        val friends: List<FriendPreview>
+        val friends: List<FriendPreview>,
+        val myDisplayName: String,
+        val myPhotoUrl: String?,
+        val myTodayCalories: Int
     ): FriendsUiState()
     data class Error(val message: String): FriendsUiState()
 }
@@ -31,9 +34,18 @@ class FriendsViewModel(application: Application): AndroidViewModel(application) 
             try {
                 _state.value = FriendsUiState.Loading
                 val uid = repo.signInAnonymouslyIfNeeded()
+                // 自己的信息
+                val me = repo.getFriendUser(uid)
+                val myCalories = repo.getTodayCalories(uid)
                 val friendUids = repo.getFriends(uid)
                 val previews = friendUids.mapNotNull { repo.getFriendPreview(it) }
-                _state.value = FriendsUiState.Ready(currentUid = uid, friends = previews)
+                _state.value = FriendsUiState.Ready(
+                    currentUid = uid,
+                    friends = previews,
+                    myDisplayName = me?.displayName ?: "",
+                    myPhotoUrl = me?.photoUrl,
+                    myTodayCalories = myCalories
+                )
             } catch (e: Exception) {
                 _state.value = FriendsUiState.Error(e.message ?: "Erreur inconnue")
             }

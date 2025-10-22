@@ -2,6 +2,7 @@ package com.example.mobile_projet.data.firebase
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
@@ -9,7 +10,8 @@ import java.util.*
 
 class FriendsRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
 ) {
     suspend fun signInAnonymouslyIfNeeded(): String {
         val user = auth.currentUser
@@ -28,7 +30,7 @@ class FriendsRepository(
         val snap = docRef.get().await()
         if (!snap.exists()) {
             val default = mapOf(
-                "displayName" to "",
+                "displayName" to "Pseudo",
                 "photoUrl" to null,
                 "createdAt" to System.currentTimeMillis(),
                 "updatedAt" to System.currentTimeMillis()
@@ -38,6 +40,63 @@ class FriendsRepository(
             // update timestamp for visibility in console
             docRef.update("updatedAt", System.currentTimeMillis()).await()
         }
+    }
+
+    // 更新昵称
+    suspend fun updateDisplayName(uid: String, name: String) {
+        userDoc(uid).update(mapOf(
+            "displayName" to name,
+            "updatedAt" to System.currentTimeMillis()
+        )).await()
+    }
+
+    // 上传头像并保存URL
+    suspend fun uploadAvatarAndSave(uid: String, bytes: ByteArray): String {
+        // 优先使用 google-services.json 中的 storageBucket，避免默认桶未解析导致 404
+        val bucket = storage.app.options.storageBucket
+        val rootRef = if (!bucket.isNullOrBlank()) {
+            storage.getReferenceFromUrl("gs://$bucket")
+        } else {
+            storage.reference
+        }
+        val ref = rootRef.child("avatars/$uid.jpg")
+        ref.putBytes(bytes).await()
+        val url = ref.downloadUrl.await().toString()
+        userDoc(uid).update(mapOf(
+            "photoUrl" to url,
+            "updatedAt" to System.currentTimeMillis()
+        )).await()
+        return url
+    }
+
+    // 添加一条当日训练项目
+    suspend fun addActivity(uid: String, sportType: String, calories: Int, timestamp: Long = System.currentTimeMillis()) {
+        val data = mapOf(
+            "sportType" to sportType,
+            "calories" to calories,
+            "timestamp" to timestamp
+        )
+        activitiesCollection(uid).add(data).await()
+    }
+
+    // 以本地 SportGoal.id 作为文档ID进行写入/更新（便于后续修改/删除同步）
+    suspend fun upsertActivity(uid: String, goalId: String, sportType: String, calories: Int, timestamp: Long = System.currentTimeMillis()) {
+        val data = mapOf(
+            "sportType" to sportType,
+            "calories" to calories,
+            "timestamp" to timestamp
+        )
+        activitiesCollection(uid).document(goalId).set(data).await()
+    }
+
+    // 删除对应 SportGoal 的活动
+    suspend fun deleteActivity(uid: String, goalId: String) {
+        activitiesCollection(uid).document(goalId).delete().await()
+    }
+
+    // 获取当日卡路里汇总
+    suspend fun getTodayCalories(uid: String): Int {
+        return getTodayActivities(uid).sumOf { it.calories }
     }
     
     suspend fun addFriend(currentUid: String, friendUid: String) {
