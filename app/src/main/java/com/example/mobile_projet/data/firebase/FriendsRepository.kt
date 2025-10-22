@@ -140,6 +140,16 @@ class FriendsRepository(
         val activities = getTodayActivities(uid)
         return user to activities
     }
+
+    // 获取今天卡路里（批量辅助方法）
+    suspend fun getTodayCaloriesForUids(uids: List<String>): List<Pair<String, Int>> {
+        val results = mutableListOf<Pair<String, Int>>()
+        for (id in uids) {
+            val kcal = getTodayCalories(id)
+            results.add(id to kcal)
+        }
+        return results
+    }
 }
 
 

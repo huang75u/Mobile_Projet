@@ -91,7 +91,7 @@ fun ExerciseScreen(
                 dailyGoal = dailyCalorieGoal,
                 onGoalClick = { showCalorieGoalDialog = true },
                 onRankingClick = {
-                    // TODO: 实现排名功能
+                    navController.navigate("leaderboard")
                 }
             )
             
