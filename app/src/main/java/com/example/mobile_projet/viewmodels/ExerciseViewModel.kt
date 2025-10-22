@@ -134,7 +134,7 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
             // 1. 获取昨天的星期几和卡路里数据
             val calendar = Calendar.getInstance()
             calendar.add(Calendar.DAY_OF_YEAR, -1) // 回到昨天
-            val yesterdayDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+            val yesterdayKey = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(calendar.time)
             
             // 计算昨天是否完成目标
             val yesterdayCalories = _sportGoals.value.sumOf { it.getCalories() }
@@ -143,7 +143,7 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
             
             // 2. 更新每周目标状态（保存昨天的完成状态）
             val weeklyStatus = userPrefs.weeklyGoalStatus
-            weeklyStatus[yesterdayDayOfWeek] = achievedYesterday
+            weeklyStatus[yesterdayKey] = achievedYesterday
             userPrefs.weeklyGoalStatus = weeklyStatus
             
             // 3. 将昨天的每日积分固化到历史积分中，然后清空每日积分

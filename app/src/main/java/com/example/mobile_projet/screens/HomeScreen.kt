@@ -95,22 +95,20 @@ fun HomeScreen(
     // 获取最近7天的数据（从6天前到今天），今天永远在最右侧
     val weeklyGoals = remember(sportGoals, dailyCalorieGoal) {
         val weeklyStatus = userPrefs.weeklyGoalStatus
-        
+        val df = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.getDefault())
         // 生成从6天前到今天的7天数据
         (6 downTo 0).map { dayOffset ->
-            val calendar = Calendar.getInstance()
-            calendar.add(Calendar.DAY_OF_YEAR, -dayOffset)
-            val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
-            
+            val calendar = java.util.Calendar.getInstance()
+            calendar.add(java.util.Calendar.DAY_OF_YEAR, -dayOffset)
+            val dayOfWeek = calendar.get(java.util.Calendar.DAY_OF_WEEK)
+            val key = df.format(calendar.time)
             // 对于今天（dayOffset = 0），实时计算是否完成目标
             val achieved = if (dayOffset == 0) {
                 val todayCaloriesValue = sportGoals.sumOf { it.getCalories() }
                 todayCaloriesValue >= dailyCalorieGoal
             } else {
-                // 从保存的数据中读取历史状态
-                weeklyStatus[dayOfWeek] ?: false
+                weeklyStatus[key] ?: false
             }
-            
             DayGoalStatus(
                 dayOfWeek = dayOfWeek,
                 achieved = achieved,

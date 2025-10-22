@@ -68,13 +68,13 @@ class UserPreferences(context: Context) {
         get() = prefs.getString(KEY_LAST_ACTIVE_DATE, "") ?: ""
         set(value) = prefs.edit().putString(KEY_LAST_ACTIVE_DATE, value).apply()
     
-    // 每周目标完成状态（保存7天数据，key为星期几：1-7，value为是否完成）
-    var weeklyGoalStatus: MutableMap<Int, Boolean>
+    // 每日完成状态（按日期存储：yyyyMMdd -> 是否完成）。用于最近7天展示
+    var weeklyGoalStatus: MutableMap<String, Boolean>
         get() {
             val json = prefs.getString(KEY_WEEKLY_GOAL_STATUS, null)
             return if (json != null) {
                 try {
-                    val type = object : TypeToken<MutableMap<Int, Boolean>>() {}.type
+                    val type = object : TypeToken<MutableMap<String, Boolean>>() {}.type
                     gson.fromJson(json, type)
                 } catch (e: Exception) {
                     mutableMapOf()
