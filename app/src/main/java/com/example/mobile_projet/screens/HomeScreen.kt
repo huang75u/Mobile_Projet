@@ -73,6 +73,11 @@ fun HomeScreen(
         }
     }
     
+    // 检查每日数据更新
+    LaunchedEffect(Unit) {
+        exerciseViewModel.checkAndResetDailyData()
+    }
+    
     // 实时更新用户数据
     LaunchedEffect(Unit) {
         while (true) {
@@ -82,33 +87,34 @@ fun HomeScreen(
         }
     }
     
-    // 计算今日卡路里消耗总量
-    val todayCalories = remember(sportGoals) {
-        val today = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
-        sportGoals.filter { goal ->
-            val goalDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date(goal.timestamp))
-            goalDate == today
-        }.sumOf { it.getCalories() }
-    }
+    // 从UserPreferences读取每日卡路里（实时数据）
+    val todayCalories = remember {
+        derivedStateOf { userPrefs.dailyCalories }
+    }.value
     
-    // 获取最近7天的数据（从6天前到今天）
+    // 获取最近7天的数据（从6天前到今天），今天永远在最右侧
     val weeklyGoals = remember(sportGoals, dailyCalorieGoal) {
-        val calendar = Calendar.getInstance()
-        val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+        val weeklyStatus = userPrefs.weeklyGoalStatus
         
+        // 生成从6天前到今天的7天数据
         (6 downTo 0).map { dayOffset ->
-            calendar.timeInMillis = System.currentTimeMillis()
+            val calendar = Calendar.getInstance()
             calendar.add(Calendar.DAY_OF_YEAR, -dayOffset)
-            val dateStr = dateFormat.format(calendar.time)
+            val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
             
-            val dayCalories = sportGoals.filter { goal ->
-                val goalDate = dateFormat.format(Date(goal.timestamp))
-                goalDate == dateStr
-            }.sumOf { it.getCalories() }
+            // 对于今天（dayOffset = 0），实时计算是否完成目标
+            val achieved = if (dayOffset == 0) {
+                val todayCaloriesValue = sportGoals.sumOf { it.getCalories() }
+                todayCaloriesValue >= dailyCalorieGoal
+            } else {
+                // 从保存的数据中读取历史状态
+                weeklyStatus[dayOfWeek] ?: false
+            }
             
             DayGoalStatus(
-                dayOffset = dayOffset,
-                achieved = dayCalories >= dailyCalorieGoal
+                dayOfWeek = dayOfWeek,
+                achieved = achieved,
+                isToday = (dayOffset == 0)
             )
         }
     }
@@ -525,11 +531,7 @@ fun HomeScreen(
 // 每周目标单项
 @Composable
 fun WeeklyGoalItem(dayStatus: DayGoalStatus) {
-    val calendar = Calendar.getInstance()
-    calendar.add(Calendar.DAY_OF_YEAR, -dayStatus.dayOffset)
-    val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
-    val dayNames = listOf("Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim")
-    val dayName = when (dayOfWeek) {
+    val dayName = when (dayStatus.dayOfWeek) {
         Calendar.SUNDAY -> "Dim"
         Calendar.MONDAY -> "Lun"
         Calendar.TUESDAY -> "Mar"
@@ -540,9 +542,6 @@ fun WeeklyGoalItem(dayStatus: DayGoalStatus) {
         else -> ""
     }
     
-    // 判断是否是未来的日期
-    val isFutureDay = dayStatus.dayOffset < 0
-    
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.width(45.dp)
@@ -550,31 +549,30 @@ fun WeeklyGoalItem(dayStatus: DayGoalStatus) {
         Text(
             text = dayName,
             fontSize = 11.sp,
-            color = Color.Gray,
-            fontWeight = FontWeight.Medium
+            color = if (dayStatus.isToday) Color(0xFF2196F3) else Color.Gray,
+            fontWeight = if (dayStatus.isToday) FontWeight.Bold else FontWeight.Medium
         )
         Spacer(modifier = Modifier.height(4.dp))
         
-        // 只在非未来日期时显示图标
+        // 显示完成状态图标
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.size(40.dp)
         ) {
-            if (!isFutureDay) {
-                Image(
-                    painter = painterResource(
-                        id = if (dayStatus.achieved) R.drawable.ic_check else R.drawable.ic_cross
-                    ),
-                    contentDescription = if (dayStatus.achieved) "已完成" else "未完成",
-                    modifier = Modifier.size(32.dp)
-                )
-            }
+            Image(
+                painter = painterResource(
+                    id = if (dayStatus.achieved) R.drawable.ic_check else R.drawable.ic_cross
+                ),
+                contentDescription = if (dayStatus.achieved) "已完成" else "未完成",
+                modifier = Modifier.size(32.dp)
+            )
         }
     }
 }
 
 data class DayGoalStatus(
-    val dayOffset: Int,
-    val achieved: Boolean
+    val dayOfWeek: Int, // 1-7: 周日到周六
+    val achieved: Boolean,
+    val isToday: Boolean = false
 )
 

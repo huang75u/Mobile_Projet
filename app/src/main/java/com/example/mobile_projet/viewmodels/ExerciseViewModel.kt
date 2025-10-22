@@ -12,7 +12,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+<<<<<<< HEAD
 import com.example.mobile_projet.data.firebase.FriendsRepository
+=======
+import java.text.SimpleDateFormat
+import java.util.*
+>>>>>>> 00d9a67b996dce7bacf135909b030d7626779f72
 
 class ExerciseViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -34,6 +39,8 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
         // 从 SharedPreferences 加载数据
         loadSportGoals()
         loadDailyCalorieGoal()
+        // 检查并重置每日数据
+        checkAndResetDailyData()
     }
     
     private fun loadSportGoals() {
@@ -119,16 +126,68 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
+    // 检查并重置每日数据
+    fun checkAndResetDailyData() {
+        val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+        val today = dateFormat.format(Date())
+        val lastActiveDate = userPrefs.lastActiveDate
+        
+        // 如果日期发生了变化（跨天了）
+        if (lastActiveDate.isNotEmpty() && lastActiveDate != today) {
+            // 1. 获取昨天的星期几和卡路里数据
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.DAY_OF_YEAR, -1) // 回到昨天
+            val yesterdayDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+            
+            // 计算昨天是否完成目标
+            val yesterdayCalories = _sportGoals.value.sumOf { it.getCalories() }
+            val dailyGoal = _dailyCalorieGoal.value
+            val achievedYesterday = yesterdayCalories >= dailyGoal
+            
+            // 2. 更新每周目标状态（保存昨天的完成状态）
+            val weeklyStatus = userPrefs.weeklyGoalStatus
+            weeklyStatus[yesterdayDayOfWeek] = achievedYesterday
+            userPrefs.weeklyGoalStatus = weeklyStatus
+            
+            // 3. 将昨天的每日积分固化到历史积分中，然后清空每日积分
+            userPrefs.consolidateDailyPoints()
+            
+            // 4. 清空每日卡路里数据
+            userPrefs.dailyCalories = 0.0
+            
+            // 5. 清空所有运动卡片，开始新的一天
+            _sportGoals.value = emptyList()
+            saveSportGoals()
+            
+            // 6. 重新计算积分（今天没有数据，每日积分为0）
+            calculateAndUpdatePoints()
+        }
+        
+        // 更新最后活跃日期
+        userPrefs.lastActiveDate = today
+    }
+    
     // 新的积分计算规则
     private fun calculateAndUpdatePoints() {
-        val completedExercises = _sportGoals.value
+        val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+        val today = dateFormat.format(Date())
+        
+        // 只计算今天的运动
+        val completedExercises = _sportGoals.value.filter { goal ->
+            val goalDate = dateFormat.format(Date(goal.timestamp))
+            goalDate == today
+        }
+        
         val dailyGoal = _dailyCalorieGoal.value
         
         // 计算已完成的总卡路里
         val totalCompletedCalories = completedExercises.sumOf { it.getCalories() }
         
+        // 更新每日卡路里数据
+        userPrefs.dailyCalories = totalCompletedCalories
+        
         if (dailyGoal == 0) {
-            userPrefs.points = 0
+            userPrefs.dailyPoints = 0
             return
         }
         
@@ -169,8 +228,8 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
             points = 0
         }
         
-        // 更新积分
-        userPrefs.points = points
+        // 更新每日积分（不是总积分）
+        userPrefs.dailyPoints = points
     }
 }
 
