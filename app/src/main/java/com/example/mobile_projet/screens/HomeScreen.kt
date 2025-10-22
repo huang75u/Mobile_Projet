@@ -474,7 +474,7 @@ fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
         Text(
-                        text = "${todayCalories.toInt()}",
+                        text = "${todayCalories.toInt()}K",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFFF6F00)
