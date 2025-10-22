@@ -48,6 +48,11 @@ fun ExerciseScreen(
     val dailyCalorieGoal by viewModel.dailyCalorieGoal.collectAsState()
     var editingGoal by remember { mutableStateOf<SportGoal?>(null) }
     
+    // 检查每日数据更新
+    LaunchedEffect(Unit) {
+        viewModel.checkAndResetDailyData()
+    }
+    
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
