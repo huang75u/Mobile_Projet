@@ -150,6 +150,16 @@ class FriendsRepository(
         }
         return results
     }
+
+    // 删除 beforeMillis 之前的所有活动（用于跨日清理）
+    suspend fun deleteActivitiesBefore(uid: String, beforeMillis: Long) {
+        val q = activitiesCollection(uid).whereLessThan("timestamp", beforeMillis)
+        val snap = q.get().await()
+        if (snap.isEmpty) return
+        val batch = db.batch()
+        snap.documents.forEach { batch.delete(it.reference) }
+        batch.commit().await()
+    }
 }
 
 

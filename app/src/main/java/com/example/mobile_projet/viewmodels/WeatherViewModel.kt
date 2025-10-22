@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mobile_projet.data.weather.WeatherData
 import com.example.mobile_projet.data.weather.WeatherRepository
+import com.example.mobile_projet.data.UserDataManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,13 +27,23 @@ sealed class WeatherUiState {
 class WeatherViewModel(application: Application) : AndroidViewModel(application) {
     
     private val repository = WeatherRepository()
+    private val userPrefs = UserDataManager.getUserPreferences(application)
     
     private val _weatherState = MutableStateFlow<WeatherUiState>(WeatherUiState.Loading)
     val weatherState: StateFlow<WeatherUiState> = _weatherState.asStateFlow()
     
     init {
-        // 默认加载巴黎的天气（可以改成其他城市）
-        loadWeather("Metz")
+        // 优先加载上次保存的位置
+        val lat = userPrefs.lastWeatherLatitude
+        val lon = userPrefs.lastWeatherLongitude
+        val city = userPrefs.lastWeatherCity
+        if (lat != 0.0 && lon != 0.0) {
+            loadWeatherByLocation(lat, lon)
+        } else if (city.isNotBlank()) {
+            loadWeather(city)
+        } else {
+            loadWeather("Metz")
+        }
     }
     
     /**
@@ -45,6 +56,10 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
             val result = repository.getWeatherByCity(cityName)
             
             _weatherState.value = if (result.isSuccess) {
+                // 保存城市
+                userPrefs.lastWeatherCity = cityName
+                userPrefs.lastWeatherLatitude = 0.0
+                userPrefs.lastWeatherLongitude = 0.0
                 WeatherUiState.Success(result.getOrNull()!!)
             } else {
                 WeatherUiState.Error(
@@ -64,6 +79,10 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
             val result = repository.getWeatherByCoordinates(latitude, longitude)
             
             _weatherState.value = if (result.isSuccess) {
+                // 保存经纬度
+                userPrefs.lastWeatherLatitude = latitude
+                userPrefs.lastWeatherLongitude = longitude
+                userPrefs.lastWeatherCity = ""
                 WeatherUiState.Success(result.getOrNull()!!)
             } else {
                 WeatherUiState.Error(

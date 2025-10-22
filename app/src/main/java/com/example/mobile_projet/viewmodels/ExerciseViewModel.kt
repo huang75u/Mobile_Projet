@@ -156,6 +156,22 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
             _sportGoals.value = emptyList()
             saveSportGoals()
             
+            // 5.1 云端清理：删除昨天及更早的活动
+            viewModelScope.launch {
+                try {
+                    val uid = repo.signInAnonymouslyIfNeeded()
+                    val startOfToday = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    repo.deleteActivitiesBefore(uid, startOfToday)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
             // 6. 重新计算积分（今天没有数据，每日积分为0）
             calculateAndUpdatePoints()
         }

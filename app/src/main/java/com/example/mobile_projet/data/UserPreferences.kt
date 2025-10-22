@@ -19,6 +19,9 @@ class UserPreferences(context: Context) {
         private const val KEY_LAST_ACTIVE_DATE = "last_active_date"
         private const val KEY_WEEKLY_GOAL_STATUS = "weekly_goal_status"
         private const val KEY_DAILY_CALORIES = "daily_calories"
+        private const val KEY_WEATHER_CITY = "weather_city"
+        private const val KEY_WEATHER_LAT = "weather_lat"
+        private const val KEY_WEATHER_LON = "weather_lon"
         private const val DEFAULT_USERNAME = "Pseudo"
         private const val DEFAULT_STEPS = "3729"
     }
@@ -84,6 +87,19 @@ class UserPreferences(context: Context) {
             val json = gson.toJson(value)
             prefs.edit().putString(KEY_WEEKLY_GOAL_STATUS, json).apply()
         }
+
+    // 最近一次天气位置（城市名/经纬度）。如果经纬度为0，表示只保存了城市名
+    var lastWeatherCity: String
+        get() = prefs.getString(KEY_WEATHER_CITY, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_WEATHER_CITY, value).apply()
+
+    var lastWeatherLatitude: Double
+        get() = prefs.getFloat(KEY_WEATHER_LAT, 0f).toDouble()
+        set(value) = prefs.edit().putFloat(KEY_WEATHER_LAT, value.toFloat()).apply()
+
+    var lastWeatherLongitude: Double
+        get() = prefs.getFloat(KEY_WEATHER_LON, 0f).toDouble()
+        set(value) = prefs.edit().putFloat(KEY_WEATHER_LON, value.toFloat()).apply()
     
     fun addPoints(points: Int) {
         this.historicalPoints += points
