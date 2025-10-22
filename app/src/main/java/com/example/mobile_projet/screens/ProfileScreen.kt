@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -54,6 +55,11 @@ fun ProfileScreen(navController: NavController? = null) {
     var isEditingUsername by remember { mutableStateOf(false) }
     var tempUsername by remember { mutableStateOf(username) }
     
+    // 权限相关状态
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    var showPermissionDeniedDialog by remember { mutableStateOf(false) }
+    var pendingImagePickerType by remember { mutableStateOf<ImagePickerType?>(null) }
+    
     // 监听数据变化，实时更新
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(500)
@@ -76,10 +82,14 @@ fun ProfileScreen(navController: NavController? = null) {
     val backgroundImagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
+        Log.d("ProfileScreen", "Background image picker result: $uri")
         uri?.let {
             if (ImageStorage.saveBackgroundImage(context, it)) {
                 backgroundImageFile = ImageStorage.getBackgroundImageFile(context)
                 backgroundImageKey++ // 强制刷新图片
+                Log.d("ProfileScreen", "Background image saved successfully")
+            } else {
+                Log.e("ProfileScreen", "Failed to save background image")
             }
         }
     }
@@ -88,10 +98,12 @@ fun ProfileScreen(navController: NavController? = null) {
     val avatarImagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
+        Log.d("ProfileScreen", "Avatar image picker result: $uri")
         uri?.let {
             if (ImageStorage.saveAvatarImage(context, it)) {
                 avatarImageFile = ImageStorage.getAvatarImageFile(context)
                 avatarImageKey++ // 强制刷新图片
+                Log.d("ProfileScreen", "Avatar image saved successfully")
                 // 同步上传到 Firebase（从已保存的本地文件读取，避免部分URI读不到的问题）
                 scope.launch {
                     try {
@@ -104,6 +116,8 @@ fun ProfileScreen(navController: NavController? = null) {
                         e.printStackTrace()
                     }
                 }
+            } else {
+                Log.e("ProfileScreen", "Failed to save avatar image")
             }
         }
     }
@@ -112,19 +126,33 @@ fun ProfileScreen(navController: NavController? = null) {
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
+        Log.d("ProfileScreen", "Permission result: isGranted=$isGranted, type=$imagePickerType")
         if (isGranted) {
             // 权限被授予，启动图片选择器
             when (imagePickerType) {
-                ImagePickerType.BACKGROUND -> backgroundImagePicker.launch("image/*")
-                ImagePickerType.AVATAR -> avatarImagePicker.launch("image/*")
-                null -> {}
+                ImagePickerType.BACKGROUND -> {
+                    Log.d("ProfileScreen", "Launching background image picker")
+                    backgroundImagePicker.launch("image/*")
+                }
+                ImagePickerType.AVATAR -> {
+                    Log.d("ProfileScreen", "Launching avatar image picker")
+                    avatarImagePicker.launch("image/*")
+                }
+                null -> {
+                    Log.w("ProfileScreen", "imagePickerType is null after permission grant")
+                }
             }
+        } else {
+            Log.w("ProfileScreen", "Permission denied - showing dialog")
+            // 权限被拒绝，显示说明对话框
+            showPermissionDeniedDialog = true
         }
         imagePickerType = null
     }
     
     // 请求权限的函数
     fun requestImagePermission(type: ImagePickerType) {
+        Log.d("ProfileScreen", "requestImagePermission called with type: $type")
         imagePickerType = type
         
         val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -133,18 +161,26 @@ fun ProfileScreen(navController: NavController? = null) {
             Manifest.permission.READ_EXTERNAL_STORAGE
         }
         
-        when (PackageManager.PERMISSION_GRANTED) {
-            ContextCompat.checkSelfPermission(context, permission) -> {
-                // 已有权限，直接启动选择器
-                when (type) {
-                    ImagePickerType.BACKGROUND -> backgroundImagePicker.launch("image/*")
-                    ImagePickerType.AVATAR -> avatarImagePicker.launch("image/*")
+        Log.d("ProfileScreen", "Checking permission: $permission, SDK: ${Build.VERSION.SDK_INT}")
+        val hasPermission = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        Log.d("ProfileScreen", "Has permission: $hasPermission")
+        
+        if (hasPermission) {
+            // 已有权限，直接启动选择器
+            when (type) {
+                ImagePickerType.BACKGROUND -> {
+                    Log.d("ProfileScreen", "Launching background picker directly")
+                    backgroundImagePicker.launch("image/*")
+                }
+                ImagePickerType.AVATAR -> {
+                    Log.d("ProfileScreen", "Launching avatar picker directly")
+                    avatarImagePicker.launch("image/*")
                 }
             }
-            else -> {
-                // 请求权限
-                permissionLauncher.launch(permission)
-            }
+        } else {
+            // 请求权限
+            Log.d("ProfileScreen", "Requesting permission: $permission")
+            permissionLauncher.launch(permission)
         }
     }
     
@@ -156,7 +192,10 @@ fun ProfileScreen(navController: NavController? = null) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(250.dp)
-                .clickable { requestImagePermission(ImagePickerType.BACKGROUND) }
+                .clickable { 
+                    Log.d("ProfileScreen", "Background area clicked")
+                    requestImagePermission(ImagePickerType.BACKGROUND) 
+                }
         ) {
             if (backgroundImageFile != null) {
                 key(backgroundImageKey) {  // 使用key强制重新加载整个组件
@@ -188,9 +227,30 @@ fun ProfileScreen(navController: NavController? = null) {
                     modifier = Modifier
                         .align(Alignment.Center)
                         .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                        .padding(8.dp),
+                        .padding(12.dp),
                     color = Color.White,
-                    fontSize = 12.sp
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            // 编辑图标 - 始终显示
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .size(40.dp),
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.9f),
+                shadowElevation = 4.dp
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "编辑背景",
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(24.dp),
+                    tint = Color(0xFF007AFF)
                 )
             }
         }
@@ -208,7 +268,10 @@ fun ProfileScreen(navController: NavController? = null) {
                     .size(150.dp)
                     .clip(CircleShape)
                     .border(4.dp, Color.White, CircleShape)
-                    .clickable { requestImagePermission(ImagePickerType.AVATAR) }
+                    .clickable { 
+                        Log.d("ProfileScreen", "Avatar clicked")
+                        requestImagePermission(ImagePickerType.AVATAR) 
+                    }
             ) {
                 if (avatarImageFile != null) {
                     key(avatarImageKey) {  // 使用key强制重新加载整个组件
@@ -239,17 +302,17 @@ fun ProfileScreen(navController: NavController? = null) {
                 // 编辑图标
                 Surface(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(36.dp)
                         .align(Alignment.BottomEnd),
                     shape = CircleShape,
                     color = Color.White,
                     shadowElevation = 4.dp
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_profile),
+                        imageVector = Icons.Default.Edit,
                         contentDescription = "编辑头像",
                         modifier = Modifier
-                            .padding(6.dp)
+                            .padding(8.dp)
                             .size(20.dp),
                         tint = Color(0xFF007AFF)
                     )
@@ -423,6 +486,64 @@ fun ProfileScreen(navController: NavController? = null) {
         }
     }
     
+    // 权限被拒绝的对话框
+    if (showPermissionDeniedDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showPermissionDeniedDialog = false 
+                imagePickerType = null
+            },
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_profile),
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = Color(0xFF007AFF)
+                )
+            },
+            title = {
+                Text(text = "需要存储权限", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(
+                    text = "为了更换头像和背景图片，需要访问您的相册。\n\n" +
+                            "请在手机设置中允许此应用访问照片权限：\n" +
+                            "设置 → 应用 → Mobile_Projet → 权限 → 照片",
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPermissionDeniedDialog = false
+                        imagePickerType = null
+                        // 打开应用设置页面
+                        try {
+                            val intent = android.content.Intent(
+                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:${context.packageName}")
+                            )
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Log.e("ProfileScreen", "Failed to open settings", e)
+                        }
+                    }
+                ) {
+                    Text("去设置")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { 
+                        showPermissionDeniedDialog = false 
+                        imagePickerType = null
+                    }
+                ) {
+                    Text("取消")
+                }
+            }
+        )
+    }
 }
 
 enum class ImagePickerType {
