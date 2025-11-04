@@ -12,7 +12,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +39,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     exerciseViewModel: ExerciseViewModel = viewModel(),
@@ -50,6 +53,7 @@ fun HomeScreen(
     // 实时监听用户数据
     var username by remember { mutableStateOf(userPrefs.username) }
     var points by remember { mutableStateOf(userPrefs.points) }
+    var isRefreshing by remember { mutableStateOf(false) }
     
     // 监听运动目标和卡路里数据
     val sportGoals by exerciseViewModel.sportGoals.collectAsState()
@@ -121,6 +125,19 @@ fun HomeScreen(
     var avatarImageFile by remember { mutableStateOf(ImageStorage.getAvatarImageFile(context)) }
     var avatarImageKey by remember { mutableStateOf(0) }
     
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            scope.launch {
+                isRefreshing = true
+                exerciseViewModel.refreshData()
+                // 同时刷新用户数据显示
+                username = userPrefs.username
+                points = userPrefs.points
+                isRefreshing = false
+            }
+        }
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -134,12 +151,40 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Bienvenue~",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Bienvenue~",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                // 刷新按钮
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            isRefreshing = true
+                            exerciseViewModel.refreshData()
+                            username = userPrefs.username
+                            points = userPrefs.points
+                            isRefreshing = false
+                        }
+                    },
+                    enabled = !isRefreshing,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Rafraîchir",
+                        tint = if (isRefreshing) Color.Gray else Color(0xFF2196F3),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
             
             // 昵称和头像
             Row(
@@ -523,7 +568,8 @@ fun HomeScreen(
                 }
             }
         }
-    }
+    }  // 结束 Column
+    }  // 结束 PullToRefreshBox
 }
 
 // 每周目标单项

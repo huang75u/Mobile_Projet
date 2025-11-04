@@ -33,11 +33,11 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
     val dailyCalorieGoal: StateFlow<Int> = _dailyCalorieGoal.asStateFlow()
     
     init {
-        // 从 SharedPreferences 加载数据
+        // 先检查并重置每日数据（在加载数据之前）
+        checkAndResetDailyDataBeforeLoad()
+        // 然后从 SharedPreferences 加载数据
         loadSportGoals()
         loadDailyCalorieGoal()
-        // 检查并重置每日数据
-        checkAndResetDailyData()
     }
     
     private fun loadSportGoals() {
@@ -123,7 +123,72 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
-    // 检查并重置每日数据
+    // 在加载数据之前检查并重置每日数据（直接清空 SharedPreferences）
+    private fun checkAndResetDailyDataBeforeLoad() {
+        val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+        val today = dateFormat.format(Date())
+        val lastActiveDate = userPrefs.lastActiveDate
+        
+        // 如果日期发生了变化（跨天了）
+        if (lastActiveDate.isNotEmpty() && lastActiveDate != today) {
+            // 1. 计算昨天的完成状态（基于 SharedPreferences 中的数据）
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.DAY_OF_YEAR, -1)
+            val yesterdayKey = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(calendar.time)
+            
+            // 从 SharedPreferences 读取昨天的运动数据
+            val json = sharedPreferences.getString("sport_goals", null)
+            val yesterdayCalories = if (json != null) {
+                try {
+                    val type = object : TypeToken<List<SportGoal>>() {}.type
+                    val goals: List<SportGoal> = gson.fromJson(json, type)
+                    goals.sumOf { it.getCalories() }
+                } catch (e: Exception) {
+                    0.0
+                }
+            } else {
+                0.0
+            }
+            
+            val dailyGoal = sharedPreferences.getInt("daily_calorie_goal", 500)
+            val achievedYesterday = yesterdayCalories >= dailyGoal
+            
+            // 2. 更新每周目标状态
+            val weeklyStatus = userPrefs.weeklyGoalStatus
+            weeklyStatus[yesterdayKey] = achievedYesterday
+            userPrefs.weeklyGoalStatus = weeklyStatus
+            
+            // 3. 固化昨天的积分
+            userPrefs.consolidateDailyPoints()
+            
+            // 4. 清空每日数据（直接清空 SharedPreferences）
+            userPrefs.dailyCalories = 0.0
+            sharedPreferences.edit()
+                .putString("sport_goals", gson.toJson(emptyList<SportGoal>()))
+                .apply()
+            
+            // 5. 云端清理
+            viewModelScope.launch {
+                try {
+                    val uid = repo.signInAnonymouslyIfNeeded()
+                    val startOfToday = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    repo.deleteActivitiesBefore(uid, startOfToday)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+        
+        // 更新最后活跃日期
+        userPrefs.lastActiveDate = today
+    }
+    
+    // 检查并重置每日数据（用于运行时检查）
     fun checkAndResetDailyData() {
         val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
         val today = dateFormat.format(Date())
@@ -178,6 +243,17 @@ class ExerciseViewModel(application: Application) : AndroidViewModel(application
         
         // 更新最后活跃日期
         userPrefs.lastActiveDate = today
+    }
+    
+    // 手动刷新数据（用于下拉刷新）
+    suspend fun refreshData() {
+        // 1. 检查并重置每日数据
+        checkAndResetDailyData()
+        // 2. 重新加载数据
+        loadSportGoals()
+        loadDailyCalorieGoal()
+        // 3. 重新计算积分
+        calculateAndUpdatePoints()
     }
     
     // 新的积分计算规则

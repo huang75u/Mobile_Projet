@@ -15,7 +15,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +38,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.mobile_projet.R
 import com.example.mobile_projet.viewmodels.ExerciseViewModel
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExerciseScreen(
     navController: NavHostController,
@@ -47,6 +51,8 @@ fun ExerciseScreen(
     val sportGoals by viewModel.sportGoals.collectAsState()
     val dailyCalorieGoal by viewModel.dailyCalorieGoal.collectAsState()
     var editingGoal by remember { mutableStateOf<SportGoal?>(null) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     
     // 检查每日数据更新
     LaunchedEffect(Unit) {
@@ -54,6 +60,17 @@ fun ExerciseScreen(
     }
     
     Box(modifier = Modifier.fillMaxSize()) {
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                scope.launch {
+                    isRefreshing = true
+                    viewModel.refreshData()
+                    isRefreshing = false
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -63,26 +80,50 @@ fun ExerciseScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // 左侧图标
-                Icon(
-                    painter = painterResource(id = R.drawable.exercise_quotidiens),
-                    contentDescription = "Objectifs quotidiens",
-                    tint = Color.Unspecified,  // 保持原图颜色
-                    modifier = Modifier.size(90.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 左侧图标
+                    Icon(
+                        painter = painterResource(id = R.drawable.exercise_quotidiens),
+                        contentDescription = "Objectifs quotidiens",
+                        tint = Color.Unspecified,  // 保持原图颜色
+                        modifier = Modifier.size(90.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.width(4.dp))
+                    
+                    // 标题文字
+                    Text(
+                        text = "Objectifs\nquotidiens",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        lineHeight = 24.sp
+                    )
+                }
                 
-                Spacer(modifier = Modifier.width(4.dp))
-                
-                // 标题文字
-                Text(
-                    text = "Objectifs\nquotidiens",
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    lineHeight = 24.sp
-                )
+                // 刷新按钮
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            isRefreshing = true
+                            viewModel.refreshData()
+                            isRefreshing = false
+                        }
+                    },
+                    enabled = !isRefreshing
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Rafraîchir",
+                        tint = if (isRefreshing) Color.Gray else Color(0xFF2196F3),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
             
             // 卡路里统计卡片
@@ -130,6 +171,7 @@ fun ExerciseScreen(
             }
         }  // 结束 LazyVerticalGrid
         }  // 结束主内容 Column
+        }  // 结束 PullToRefreshBox
         
         // 右上角的积分规则按钮
         Column(
