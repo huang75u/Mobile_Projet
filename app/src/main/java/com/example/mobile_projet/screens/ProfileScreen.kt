@@ -361,7 +361,7 @@ fun ProfileScreen(navController: NavController? = null) {
                             },
                             modifier = Modifier.height(40.dp)
                         ) {
-                            Text("保存")
+                            Text("Enregistrer")
                         }
                     }
                 } else {
