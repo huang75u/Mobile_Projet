@@ -105,25 +105,6 @@ fun ExerciseScreen(
                         lineHeight = 24.sp
                     )
                 }
-                
-                // 刷新按钮
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            isRefreshing = true
-                            viewModel.refreshData()
-                            isRefreshing = false
-                        }
-                    },
-                    enabled = !isRefreshing
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Rafraîchir",
-                        tint = if (isRefreshing) Color.Gray else Color(0xFF2196F3),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
             }
             
             // 卡路里统计卡片

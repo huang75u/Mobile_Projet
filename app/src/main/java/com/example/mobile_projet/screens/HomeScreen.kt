@@ -162,28 +162,7 @@ fun HomeScreen(
                 )
                 
                 Spacer(modifier = Modifier.width(8.dp))
-                
-                // 刷新按钮
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            isRefreshing = true
-                            exerciseViewModel.refreshData()
-                            username = userPrefs.username
-                            points = userPrefs.points
-                            isRefreshing = false
-                        }
-                    },
-                    enabled = !isRefreshing,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Rafraîchir",
-                        tint = if (isRefreshing) Color.Gray else Color(0xFF2196F3),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+
             }
             
             // 昵称和头像
