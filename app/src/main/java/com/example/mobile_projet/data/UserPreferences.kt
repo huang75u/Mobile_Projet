@@ -12,7 +12,6 @@ class UserPreferences(context: Context) {
     
     companion object {
         private const val KEY_USERNAME = "username"
-        private const val KEY_POINTS = "points"
         private const val KEY_TOTAL_POINTS = "total_points"
         private const val KEY_DAILY_POINTS = "daily_points"
         private const val KEY_STEPS = "steps"

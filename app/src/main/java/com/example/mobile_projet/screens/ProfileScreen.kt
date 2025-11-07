@@ -56,10 +56,8 @@ fun ProfileScreen(navController: NavController? = null) {
     var tempUsername by remember { mutableStateOf(username) }
     
     // 权限相关状态
-    var showPermissionDialog by remember { mutableStateOf(false) }
     var showPermissionDeniedDialog by remember { mutableStateOf(false) }
-    var pendingImagePickerType by remember { mutableStateOf<ImagePickerType?>(null) }
-    
+
     // 监听数据变化，实时更新
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(500)
@@ -539,7 +537,7 @@ fun ProfileScreen(navController: NavController? = null) {
                         imagePickerType = null
                     }
                 ) {
-                    Text("取消")
+                    Text("Annuler")
                 }
             }
         )

@@ -45,9 +45,7 @@ data class Wind(
     val speed: Double
 )
 
-/**
- * UI 展示用的天气数据模型
- */
+
 data class WeatherData(
     val temperature: Int,
     val tempMin: Int,

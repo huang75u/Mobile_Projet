@@ -2,10 +2,6 @@ package com.example.mobile_projet.data
 
 import android.content.Context
 
-/**
- * 全局用户数据管理器
- * 用于在不同界面间共享用户数据
- */
 object UserDataManager {
     private var userPreferences: UserPreferences? = null
     
